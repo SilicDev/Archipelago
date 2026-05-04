@@ -83,17 +83,6 @@ class SonicColoursDSClient(BizHawkClient):
     async def validate_rom(self, ctx: "BizHawkClientContext") -> bool:
         from CommonClient import logger
 
-        try:
-            rom_hash = await bizhawk.get_hash(ctx.bizhawk_ctx)
-            if rom_hash != EU_HASH:
-                if rom_hash == US_HASH:
-                    logger.info("ERROR: You seem to have a US ROM loaded!")
-                return False    
-        except UnicodeDecodeError:
-            return False
-        except bizhawk.RequestFailedError:
-            return False  # Should verify on the next pass
-
         ctx.game = self.game
         ctx.items_handling = 0b111
         ctx.want_slot_data = True

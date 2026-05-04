@@ -15,6 +15,8 @@ from .regions import create_regions, connect_regions
 from .rules import set_rules
 from .options import SonicColoursDSOptions, Goal, scds_option_groups
 from .data import ItemNames, LocationNames
+from .rom import SonicColoursDSProcedurePatch, write_tokens
+
 
 class SonicColoursDSWebWorld(WebWorld):
     """
@@ -36,10 +38,23 @@ class SonicColoursDSWebWorld(WebWorld):
     option_groups = scds_option_groups
 
 
-class SonicColorsDSWorld(World):
+class SonicColoursDSSettings(settings.Group):
+    class SonicColoursDSRomFile(settings.UserFilePath):
+        """File name of your European Sonic Colours DS ROM"""
+        description = "Sonic Colours DS ROM File"
+        copy_to = "Sonic Colours (Europe) (En,Ja,Fr,De,Es,It).nds"
+        md5s = [SonicColoursDSProcedurePatch.hash]
+
+    rom_file: SonicColoursDSRomFile = SonicColoursDSRomFile(SonicColoursDSRomFile.copy_to)
+
+
+class SonicColoursDSWorld(World):
     game = "Sonic Colours (DS)"
     web = SonicColoursDSWebWorld()
     topology_present = True
+
+    settings_key = "sonic_colours_ds_settings"
+    settings: typing.ClassVar[SonicColoursDSSettings]
 
     options_dataclass = SonicColoursDSOptions
     options: SonicColoursDSOptions
@@ -101,6 +116,13 @@ class SonicColorsDSWorld(World):
     def get_filler_item_name(self) -> str:
         junk_keys = list(junk_table.keys())
         return self.multiworld.random.choice(junk_keys)
+    
+    def generate_output(self, output_directory: str) -> None:
+        patch = SonicColoursDSProcedurePatch(player=self.player, player_name=self.player_name)
+        write_tokens(self, patch)
+        # Write Output
+        out_file_name = self.multiworld.get_out_file_name_base(self.player)
+        patch.write(os.path.join(output_directory, f"{out_file_name}{patch.patch_file_ending}"))
     
     def fill_slot_data(self) -> dict[str, typing.Any]:
         slot_data = self.options.as_dict(
