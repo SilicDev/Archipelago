@@ -237,7 +237,8 @@ class SonicColoursDSClient(BizHawkClient):
                                     [
                                         (SCDS_CHAOS_EMERALDS, self.local_emeralds.to_bytes(2, "little"), "Main RAM")
                                     ], [guards["SONIC"], guards["AREA"]])
-                            if self.local_emeralds == 0x7F and story_completion > 0xF0000 and story_completion < 0x110000:
+                            if self.local_emeralds == 0x7F and ((story_completion > 0xF0000 and story_completion < 0x110000) or 
+                                                                (story_completion < 0xF0000 and location_table[LocationNames.nega_wisp_armor] in self.local_checked_locations)):
                                 await bizhawk.guarded_write(
                                     ctx.bizhawk_ctx,
                                     [
