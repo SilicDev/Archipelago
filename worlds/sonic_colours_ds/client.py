@@ -14,6 +14,7 @@ from .locations import location_table, red_rings_table, level_clear_table
 from .items import item_table, wisp_unlocks_table, emeralds_table, planet_access_table, wisps_table
 from .options import Goal
 
+SCDS_AP_LEVEL_ID_TARGET = 0x0F1AAC
 
 SCDS_RED_RINGS = 0x119BB4
 SCDS_SCORES = 0x119BC0
@@ -21,6 +22,7 @@ SCDS_ITEMS_RECEIVED = 0x119C0C # actually this is the score for the nega-mother 
 SCDS_SPECIAL_STAGE_SCORES = 0x119C58
 SCDS_AREA_ID = 0x1207C4
 SCDS_LEVEL_ID = 0x1207C8
+SCDS_CURRENT_SCREEN = 0x1207FC
 SCDS_LEVEL_RED_RINGS = 0x1208D7
 SCDS_GAME_FLAGS = 0x120890 # not 100% sure what this is for, but seems consistent enough for what we need
 SCDS_LIFE_COUNTER = 0x1208E6
@@ -41,7 +43,6 @@ SCDS_STORY_COMPLETION = 0x119B64
 SCDS_PLANET_AREA_FLAGS = 0x119B68
 SCDS_MISSION_UNLOCK_FLAGS = 0x119B6B
 SCDS_SPECIAL_STAGE_UNLOCKED = 0x119B8C
-SCDS_WISP_ARMOR_DEFEATED_FLAG_MAYBE = 0x137DD8
 
 SCDS_LEVEL_SELECT_TARGET = 0x19BF34
 SCDS_TV_BOSS_WISPS = 0x1A00B4 # five 4 byte values
@@ -61,6 +62,7 @@ class SonicColoursDSClient(BizHawkClient):
     local_checked_locations: Set[int]
     local_access_items: Set[str]
     local_active_wisps: int
+    local_available_planets: int
     local_red_rings: int
     local_emeralds: int
     local_junk_items: list[str]
@@ -75,6 +77,7 @@ class SonicColoursDSClient(BizHawkClient):
         self.last_level = -1
         self.last_area = -1
         self.local_active_wisps = 0
+        self.local_available_planets = 0
         self.local_red_rings = 0
         self.local_emeralds = 0
         self.num_items_received = 0
@@ -107,7 +110,7 @@ class SonicColoursDSClient(BizHawkClient):
                     (SCDS_COUNTER_POINTER, 4, "Main RAM"),
                     (SCDS_AREA_ID, 2, "Main RAM"),
                     (SCDS_LEVEL_ID, 2, "Main RAM"),
-                    (SCDS_WISP_ARMOR_DEFEATED_FLAG_MAYBE, 4, "Main RAM")
+                    (SCDS_CURRENT_SCREEN, 2, "MAIN RAM")
                 ])
             
             guards["SONIC"] = (SCDS_SONIC_POINTER, read_result[0], "Main RAM")
@@ -115,13 +118,14 @@ class SonicColoursDSClient(BizHawkClient):
 
             guards["AREA"] = (SCDS_AREA_ID, read_result[2], "Main RAM")
             guards["LEVEL"] = (SCDS_LEVEL_ID, read_result[3], "Main RAM")
+            guards["SCREEN"] = (SCDS_CURRENT_SCREEN, read_result[4], "Main RAM")
 
             sonic = int.from_bytes(guards["SONIC"][1], "little")
             counters = int.from_bytes(guards["COUNTERS"][1], "little")
             area_id = int.from_bytes(guards["AREA"][1], "little")
             level_id = int.from_bytes(guards["LEVEL"][1], "little")
-            wisp_armor_defeated_flag = int.from_bytes(read_result[4], "little")
-            if level_id == 6 and wisp_armor_defeated_flag == 0x701:
+            current_screen = int.from_bytes(guards["SCREEN"][1], "little")
+            if level_id == 6 and current_screen == 0x19:
                 if ctx.slot_data["goal"] == Goal.option_wisp_armor:
                     if not ctx.finished_game:
                         ctx.finished_game = True
@@ -136,27 +140,17 @@ class SonicColoursDSClient(BizHawkClient):
                 return # assume invalid
 
             location_prefix = DataMaps.level_id_to_location[level_id]
-
-            if area_id == 0 and counters < SCDS_RAM_START: # Planet Map
-                read_result = await bizhawk.guarded_read(
-                    ctx.bizhawk_ctx,
-                    [
-                        (SCDS_LEVEL_SELECT_TARGET, 2, "Main RAM")
-                    ],
-                    [guards["SONIC"], guards["AREA"]])
-                if read_result is not None:
-                    level_target = int.from_bytes(read_result[0], "little")
-                    if level_target < 7:
-                        if DataMaps.level_id_to_access_item[level_target] not in self.local_access_items:
-                            for i in range(7):
-                                if DataMaps.level_id_to_access_item[i] in self.local_access_items:
-                                    await bizhawk.guarded_write(
-                                        ctx.bizhawk_ctx,
-                                        [
-                                            (SCDS_LEVEL_SELECT_TARGET, i.to_bytes(2, "little"), "Main RAM"),
-                                            (SCDS_LEVEL_SELECT_PREVIEW, i.to_bytes(2, "little"), "Main RAM")
-                                    ], [guards["SONIC"], guards["AREA"]])
-                                    break
+            if counters < SCDS_RAM_START:
+                if area_id == 0: # Planet Map
+                    await bizhawk.write(ctx.bizhawk_ctx, [(SCDS_AP_LEVEL_ID_TARGET, (self.local_available_planets).to_bytes(2, "little"), "Main RAM")])
+                    read_result = await bizhawk.guarded_read(
+                        ctx.bizhawk_ctx,
+                        [
+                            (SCDS_LEVEL_SELECT_TARGET, 2, "Main RAM")
+                        ],
+                        [guards["SONIC"], guards["AREA"]])
+                else:
+                    await bizhawk.write(ctx.bizhawk_ctx, [(SCDS_AP_LEVEL_ID_TARGET, (0x7F).to_bytes(2, "little"), "Main RAM")])
             if area_id != self.last_area:
                 self.last_area = area_id
                 await ctx.send_msgs([{
@@ -175,11 +169,10 @@ class SonicColoursDSClient(BizHawkClient):
                     if location_name in red_rings_table.keys():
                         red_ring_storage |= 1 << (location_table[location_name] - location_table[LocationNames.tropical_resort_act_1_red_ring_1])
                 if red_ring_storage != self.local_red_rings:
-                    await bizhawk.guarded_write(
+                    await bizhawk.write(
                         ctx.bizhawk_ctx,
-                        [
-                            (SCDS_RED_RINGS, red_ring_storage.to_bytes(12, "little"), "Main RAM")
-                        ], [guards["SONIC"]])
+                        [(SCDS_RED_RINGS, red_ring_storage.to_bytes(12, "little"), "Main RAM")]
+                    )
                     self.local_red_rings = red_ring_storage
 
             await self.handle_received_items(ctx, guards)
@@ -199,7 +192,7 @@ class SonicColoursDSClient(BizHawkClient):
                             ctx.bizhawk_ctx,
                             [
                                 (SCDS_CHAOS_EMERALDS, DataMaps.level_id_to_emeralds[level_id].to_bytes(2, "little"), "Main RAM")
-                            ], [guards["SONIC"], guards["AREA"]])
+                            ], [guards["LEVEL"]])
                     if ctx.slot_data["goal"] == Goal.option_wisp_armor:
                         if not ctx.finished_game and story_completion >= 0x100000:
                             ctx.finished_game = True
@@ -208,13 +201,13 @@ class SonicColoursDSClient(BizHawkClient):
                                 "status": ClientStatus.CLIENT_GOAL,
                             }])
                         if not ctx.finished_game and story_completion < 0xF0000:
-                            await bizhawk.guarded_write(
+                            await bizhawk.write(
                                 ctx.bizhawk_ctx,
                                 [
                                     (SCDS_STORY_COMPLETION, 0xE4455.to_bytes(3, "little"), "Main RAM"),
                                     (SCDS_PLANET_AREA_FLAGS, 0x777777.to_bytes(3, "little"), "Main RAM"),
                                     (SCDS_MISSION_UNLOCK_FLAGS, 0x3FFFF.to_bytes(3, "little"), "Main RAM")
-                                ], [guards["SONIC"], guards["AREA"]])
+                                ])
                     if ctx.slot_data["goal"] == Goal.option_mother_wisp:
                         if story_completion >= 0x100000:
                             local_checked_locations.add(location_table[LocationNames.nega_wisp_armor]) # Nega-Wisp Armor
@@ -230,30 +223,31 @@ class SonicColoursDSClient(BizHawkClient):
                                     ctx.bizhawk_ctx,
                                     [
                                         (SCDS_CHAOS_EMERALDS, DataMaps.level_id_to_emeralds[level_id].to_bytes(2, "little"), "Main RAM")
-                                    ], [guards["SONIC"], guards["AREA"]])
+                                    ], [guards["LEVEL"]])
                             else:
-                                await bizhawk.guarded_write(
+                                await bizhawk.write(
                                     ctx.bizhawk_ctx,
                                     [
                                         (SCDS_CHAOS_EMERALDS, self.local_emeralds.to_bytes(2, "little"), "Main RAM")
-                                    ], [guards["SONIC"], guards["AREA"]])
+                                    ])
                             if self.local_emeralds == 0x7F and ((story_completion > 0xF0000 and story_completion < 0x110000) or 
                                                                 (story_completion < 0xF0000 and location_table[LocationNames.nega_wisp_armor] in self.local_checked_locations)):
-                                await bizhawk.guarded_write(
+                                self.local_available_planets |= 1 << 7
+                                await bizhawk.write(
                                     ctx.bizhawk_ctx,
                                     [
                                         (SCDS_STORY_COMPLETION, 0x104455.to_bytes(3, "little"), "Main RAM"), # game handles opening mother wisp from here
                                         (SCDS_PLANET_AREA_FLAGS, 0xFFFFFF.to_bytes(3, "little"), "Main RAM"),
                                         (SCDS_MISSION_UNLOCK_FLAGS, 0xFFFFFF.to_bytes(3, "little"), "Main RAM")
-                                    ], [guards["SONIC"], guards["AREA"]])
+                                    ])
                             elif story_completion < 0xF0000:
-                                await bizhawk.guarded_write(
+                                await bizhawk.write(
                                     ctx.bizhawk_ctx,
                                     [
                                         (SCDS_STORY_COMPLETION, 0x0E4455.to_bytes(3, "little"), "Main RAM"),
                                         (SCDS_PLANET_AREA_FLAGS, 0x777777.to_bytes(3, "little"), "Main RAM"),
                                         (SCDS_MISSION_UNLOCK_FLAGS, 0x3FFFF.to_bytes(3, "little"), "Main RAM")
-                                    ], [guards["SONIC"], guards["AREA"]])
+                                    ])
             
             for i in range(7):
                 read_result = await bizhawk.guarded_read(
@@ -261,7 +255,7 @@ class SonicColoursDSClient(BizHawkClient):
                     [
                         (SCDS_SPECIAL_STAGE_SCORES + i * 4, 4, "Main RAM")
                     ],
-                    [guards["SONIC"], guards["LEVEL"]])
+                    [guards["SONIC"]])
                 if read_result is not None:
                     score = int.from_bytes(read_result[0], "little")
                     if score > 0xF: #ignore rank
@@ -274,7 +268,7 @@ class SonicColoursDSClient(BizHawkClient):
                     [
                         (SCDS_LEVEL_RED_RINGS, 5, "Main RAM")
                     ],
-                    [guards["SONIC"], guards["LEVEL"]])
+                    [guards["LEVEL"]])
                 if read_result is not None:
                     for ring in range(len(read_result[0])):
                         if read_result[0][ring] == 1:
@@ -296,11 +290,10 @@ class SonicColoursDSClient(BizHawkClient):
                         score = int.from_bytes(read_result[0], "little")
                         if score == 0:
                             score = ctx.slot_data["rankrequirement"] + 1
-                            await bizhawk.guarded_write(
+                            await bizhawk.write(
                                 ctx.bizhawk_ctx,
-                                [
-                                    (SCDS_SCORES + offset, score.to_bytes(4, "little"), "Main RAM")
-                                ], [guards["SONIC"]])
+                                [(SCDS_SCORES + offset, score.to_bytes(4, "little"), "Main RAM")]
+                            )
             
             for location in level_clear_table.keys():
                 location_code = level_clear_table[location]
@@ -349,36 +342,29 @@ class SonicColoursDSClient(BizHawkClient):
                             if self.local_active_wisps & (1 << (i + 1)) == 0:
                                 write_list.append((SCDS_TV_BOSS_WISPS + 4 * i, (0).to_bytes(4, "little"), "Main RAM"))
                         if not len(write_list) == 0:
-                            await bizhawk.guarded_write(
-                                ctx.bizhawk_ctx,
-                                write_list,
-                                [guards["SONIC"], guards["COUNTERS"]]
-                            )
+                            await bizhawk.write(ctx.bizhawk_ctx, write_list)
                         local_checked_locations.add(location_table[LocationNames.terminal_velocity_chase])
             if level_id in DataMaps.boss_level_wisps.keys():
                 if self.local_active_wisps & DataMaps.boss_level_wisps[level_id] == 0:
                     if level_id == 30:
-                        await bizhawk.guarded_write(
+                        await bizhawk.write(
                             ctx.bizhawk_ctx,
-                            [
-                                (SCDS_ACTIVE_WISPS, (0).to_bytes(1, "little"), "Main RAM")
-                            ],
-                            [guards["SONIC"], guards["COUNTERS"]]
+                            [(SCDS_ACTIVE_WISPS, (0).to_bytes(1, "little"), "Main RAM")]
                         )
                     else:
+                        counters &= 0xFFFFFF  # DS uses only 3 bytes for addresses in RAM
                         await bizhawk.guarded_write(
                             ctx.bizhawk_ctx,
                             [
                                 ((counters + SCDS_COUNTER_STORED_WISP), (-1).to_bytes(4, "little", signed=True), "Main RAM")
                             ],
-                            [guards["SONIC"], guards["COUNTERS"]]
+                            [guards["COUNTERS"]]
                         )
             else:
-                await bizhawk.guarded_write(
+                await bizhawk.write(
                     ctx.bizhawk_ctx,
-                    [
-                        (SCDS_ACTIVE_WISPS, [self.local_active_wisps], "Main RAM")
-                    ], [guards["SONIC"]])
+                    [(SCDS_ACTIVE_WISPS, [self.local_active_wisps], "Main RAM")]
+                )
             
             # Send locations
             if local_checked_locations != self.local_checked_locations:
@@ -411,14 +397,14 @@ class SonicColoursDSClient(BizHawkClient):
                 self.local_emeralds |= 1 << (item_table[item_name].code - item_table[ItemNames.green_emerald].code)
             elif item_name in planet_access_table.keys():
                 self.local_access_items.add(item_name)
+                self.local_available_planets |= 1 << DataMaps.access_item_to_offset[item_name]
             else:
                 self.local_junk_items.append(item_name)
             if game_num_items_received < self.num_items_received:
-                await bizhawk.guarded_write(
+                await bizhawk.write(
                     ctx.bizhawk_ctx,
-                    [
-                        (SCDS_ITEMS_RECEIVED, (self.num_items_received << 4).to_bytes(4, "little"), "Main RAM")
-                    ], [guards["SONIC"]])
+                    [(SCDS_ITEMS_RECEIVED, (self.num_items_received << 4).to_bytes(4, "little"), "Main RAM")]
+                )
             self.num_items_received += 1
 
     async def handle_junk_items(self, ctx: "BizHawkClientContext", guards: Dict[str, Tuple[int, bytes, str]]) -> None:
@@ -460,11 +446,10 @@ class SonicColoursDSClient(BizHawkClient):
                     ], [guards["COUNTERS"]])
                 if read_result is not None:
                     life = int.from_bytes(read_result[0], "little")
-                    await bizhawk.guarded_write(
+                    await bizhawk.write(
                         ctx.bizhawk_ctx,
-                        [
-                            (SCDS_LIFE_COUNTER, (life + 1).to_bytes(2, "little"), "Main RAM")
-                        ], [guards["COUNTERS"]])
+                        [(SCDS_LIFE_COUNTER, (life + 1).to_bytes(2, "little"), "Main RAM")]
+                    )
                     return
             else:
                 rings_added = DataMaps.item_to_rings[item]

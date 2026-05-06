@@ -3,6 +3,7 @@ Archipelago World definition for Sonic Colours (DS)
 """
 import os
 import typing
+import pkgutil
 
 from BaseClasses import Item, ItemClassification, Region, Tutorial
 import settings
@@ -119,6 +120,7 @@ class SonicColoursDSWorld(World):
     
     def generate_output(self, output_directory: str) -> None:
         patch = SonicColoursDSProcedurePatch(player=self.player, player_name=self.player_name)
+        patch.write_file("base_patch.bsdiff4", pkgutil.get_data(__name__, "data/base_patch.bsdiff4"))
         write_tokens(self, patch)
         # Write Output
         out_file_name = self.multiworld.get_out_file_name_base(self.player)
