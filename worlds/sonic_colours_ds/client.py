@@ -13,6 +13,7 @@ from .data import DataMaps, ItemNames, LocationNames
 from .locations import location_table, red_rings_table, level_clear_table
 from .items import item_table, wisp_unlocks_table, emeralds_table, planet_access_table, wisps_table
 from .options import Goal
+from .rom import EU_HASH, US_HASH, ROM_NAME, PATCHED_NAME
 
 SCDS_AP_LEVEL_ID_TARGET = 0x0F1AAC
 
@@ -48,11 +49,10 @@ SCDS_LEVEL_SELECT_TARGET = 0x19BF34
 SCDS_TV_BOSS_WISPS = 0x1A00B4 # five 4 byte values
 SCDS_LEVEL_SELECT_PREVIEW = 0x1A098A
 
+SCDS_HEADER = 0x3FFE00
+
 SCDS_RAM_START = 0x02000000
 SCDS_RAM_SIZE = 0x00400000
-
-EU_HASH = "406514E483EE092A89F4298F59FD53A9"
-US_HASH = "1996db2bdd78f30082ac003c1bc14a9b"
 
 class SonicColoursDSClient(BizHawkClient):
     game = "Sonic Colours (DS)"
@@ -85,6 +85,22 @@ class SonicColoursDSClient(BizHawkClient):
 
     async def validate_rom(self, ctx: "BizHawkClientContext") -> bool:
         from CommonClient import logger
+
+        try:
+            header = await bizhawk.read(
+                ctx.bizhawk_ctx,
+                [(SCDS_HEADER, 18, "Main RAM")]
+            )
+            if ROM_NAME in header[0]:
+                logger.info("Unpatched ROM detected, please look for the .apscds patch for your slot.")
+                return False
+            elif PATCHED_NAME not in header[0]:
+                return False
+        except UnicodeDecodeError:
+            return False
+        except bizhawk.RequestFailedError:
+            return False  # Should verify on the next pass
+
 
         ctx.game = self.game
         ctx.items_handling = 0b111

@@ -9,7 +9,9 @@ if TYPE_CHECKING:
     from . import SonicColoursDSWorld
 
 EU_HASH = "406514E483EE092A89F4298F59FD53A9"
-ROM_NAME = "SONICCLR:AP\0"
+US_HASH = "1996db2bdd78f30082ac003c1bc14a9b"
+ROM_NAME = b"SONICCOLORS\0"
+PATCHED_NAME = b"SONICCLR:AP\0"
 
 class SonicColoursDSProcedurePatch(APProcedurePatch, APTokenMixin):
     game = "Sonic Colours DS"
@@ -33,7 +35,7 @@ def write_tokens(world: "SonicColoursDSWorld", patch: SonicColoursDSProcedurePat
     patch.write_token(
         APTokenTypes.WRITE,
         0x0,
-        struct.pack("<12s", ROM_NAME.encode("ascii", "replace"))
+        struct.pack("<12s", PATCHED_NAME)
     )
     patch.write_token(
         APTokenTypes.WRITE,
