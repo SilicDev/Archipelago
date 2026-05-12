@@ -15,7 +15,7 @@ from .items import item_table, wisp_unlocks_table, emeralds_table, planet_access
 from .options import Goal
 from .rom import EU_HASH, US_HASH, ROM_NAME, PATCHED_NAME
 
-SCDS_AP_LEVEL_ID_TARGET = 0x0F1AAC
+SCDS_AP_LEVEL_ID_TARGET = 0x0F1AB4
 
 SCDS_RED_RINGS = 0x119BB4
 SCDS_SCORES = 0x119BC0
@@ -126,7 +126,7 @@ class SonicColoursDSClient(BizHawkClient):
                     (SCDS_COUNTER_POINTER, 4, "Main RAM"),
                     (SCDS_AREA_ID, 2, "Main RAM"),
                     (SCDS_LEVEL_ID, 2, "Main RAM"),
-                    (SCDS_CURRENT_SCREEN, 2, "MAIN RAM")
+                    (SCDS_CURRENT_SCREEN, 2, "Main RAM")
                 ])
             
             guards["SONIC"] = (SCDS_SONIC_POINTER, read_result[0], "Main RAM")
@@ -156,17 +156,7 @@ class SonicColoursDSClient(BizHawkClient):
                 return # assume invalid
 
             location_prefix = DataMaps.level_id_to_location[level_id]
-            if counters < SCDS_RAM_START:
-                if area_id == 0: # Planet Map
-                    await bizhawk.write(ctx.bizhawk_ctx, [(SCDS_AP_LEVEL_ID_TARGET, (self.local_available_planets).to_bytes(2, "little"), "Main RAM")])
-                    read_result = await bizhawk.guarded_read(
-                        ctx.bizhawk_ctx,
-                        [
-                            (SCDS_LEVEL_SELECT_TARGET, 2, "Main RAM")
-                        ],
-                        [guards["SONIC"], guards["AREA"]])
-                else:
-                    await bizhawk.write(ctx.bizhawk_ctx, [(SCDS_AP_LEVEL_ID_TARGET, (0x7F).to_bytes(2, "little"), "Main RAM")])
+            await bizhawk.write(ctx.bizhawk_ctx, [(SCDS_AP_LEVEL_ID_TARGET, (self.local_available_planets).to_bytes(2, "little"), "Main RAM")])
             if area_id != self.last_area:
                 self.last_area = area_id
                 await ctx.send_msgs([{
@@ -360,6 +350,10 @@ class SonicColoursDSClient(BizHawkClient):
                         if not len(write_list) == 0:
                             await bizhawk.write(ctx.bizhawk_ctx, write_list)
                         local_checked_locations.add(location_table[LocationNames.terminal_velocity_chase])
+            await bizhawk.write(
+                ctx.bizhawk_ctx,
+                [(SCDS_ACTIVE_WISPS, [self.local_active_wisps], "Main RAM")]
+            )
             if level_id in DataMaps.boss_level_wisps.keys():
                 if self.local_active_wisps & DataMaps.boss_level_wisps[level_id] == 0:
                     if level_id == 30:
@@ -376,11 +370,6 @@ class SonicColoursDSClient(BizHawkClient):
                             ],
                             [guards["COUNTERS"]]
                         )
-            else:
-                await bizhawk.write(
-                    ctx.bizhawk_ctx,
-                    [(SCDS_ACTIVE_WISPS, [self.local_active_wisps], "Main RAM")]
-                )
             
             # Send locations
             if local_checked_locations != self.local_checked_locations:
