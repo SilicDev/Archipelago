@@ -318,6 +318,8 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.coral_hill_wall_crab_chest_region, LocationNames.coral_hill_right_wall_crab_region, None, True)
     connect(world, LocationNames.coral_hill_post_random_region, LocationNames.coral_hill_climb_bottom_region, soarshoes_rule, True)
     connect(world, LocationNames.coral_hill_climb_bottom_region, LocationNames.coral_hill_post_random_region, None, True)
+    connect(world, LocationNames.coral_hill_climb_top_region, LocationNames.coral_hill_climb_bottom_region, upgraded_ruby_rule, True)
+    connect(world, LocationNames.coral_hill_climb_bottom_region, LocationNames.coral_hill_climb_top_region, upgraded_ruby_rule | gloves_rule, True)
     connect(world, LocationNames.coral_hill_top_save_climb_region, LocationNames.coral_hill_spawner_trident_region, gloves_rule, True)
     connect(world, LocationNames.coral_hill_spawner_trident_region, LocationNames.coral_hill_top_save_climb_region, gloves_rule, True)
     connect(world, LocationNames.coral_hill_spawner_trident_region, LocationNames.coral_hill_boss_region, gloves_rule, True)
