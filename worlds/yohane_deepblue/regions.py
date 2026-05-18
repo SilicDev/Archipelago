@@ -75,7 +75,7 @@ def create_regions(world: World, active_locations: dict[str, int]) -> None:
     crystalline_grotto_random_region = create_region(world, LocationNames.crystalline_grotto_random_region, active_locations, crystalline_grotto_random_region_locations)
     crystalline_grotto_right_save_region = create_region(world, LocationNames.crystalline_grotto_right_save_region, active_locations, crystalline_grotto_right_save_region_locations)
     crystalline_grotto_bottom_region = create_region(world, LocationNames.crystalline_grotto_bottom_region, active_locations, crystalline_grotto_bottom_region_locations)
-    crystalline_grotto_left_region = create_region(world, LocationNames.crystalline_grotto_left_region, active_locations, crystalline_grotto_left_region_locations)
+    crystalline_grotto_post_boss_region = create_region(world, LocationNames.crystalline_grotto_post_boss_region, active_locations, crystalline_grotto_post_boss_region_locations)
     crystalline_grotto_center_region = create_region(world, LocationNames.crystalline_grotto_center_region, active_locations, crystalline_grotto_center_region_locations)
     crystalline_grotto_center_save_region = create_region(world, LocationNames.crystalline_grotto_center_save_region, active_locations, crystalline_grotto_center_save_region_locations)
     crystalline_grotto_left_center_save_region = create_region(world, LocationNames.crystalline_grotto_left_center_save_region, active_locations, crystalline_grotto_left_center_save_region_locations)
@@ -177,7 +177,7 @@ def create_regions(world: World, active_locations: dict[str, int]) -> None:
         crystalline_grotto_random_region,
         crystalline_grotto_right_save_region,
         crystalline_grotto_bottom_region,
-        crystalline_grotto_left_region,
+        crystalline_grotto_post_boss_region,
         crystalline_grotto_center_region,
         crystalline_grotto_center_save_region,
         crystalline_grotto_left_center_save_region,
@@ -348,18 +348,21 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.sea_of_trees_boss_region, LocationNames.sea_of_trees_post_boss_region, None, True)
 
     connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_left_save_region, soarshoes_rule | gloves_rule)
-    connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_left_region, hanamaru_rule | soarshoes_rule | gloves_rule) # you_rule on hard
+    connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_post_boss_region, hanamaru_rule) # you_rule on hard
     connect(world, LocationNames.crystalline_grotto_left_save_region, LocationNames.crystalline_grotto_top_left_save_region, gloves_rule, True)
     connect(world, LocationNames.crystalline_grotto_top_left_save_region, LocationNames.crystalline_grotto_left_save_region, None, True)
     connect(world, LocationNames.crystalline_grotto_top_left_save_region, LocationNames.crystalline_grotto_top_region, soarshoes_rule | gloves_rule)
-    connect(world, LocationNames.crystalline_grotto_top_region, LocationNames.crystalline_grotto_left_region, kanan_rule, True)
+    connect(world, LocationNames.crystalline_grotto_top_region, LocationNames.crystalline_grotto_entrance_region, kanan_rule, True)
+    connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_top_region, upgraded_kanan_rule, True)
     connect(world, LocationNames.crystalline_grotto_top_region, LocationNames.crystalline_grotto_center_region, you_rule & riko_rule, True)
-    connect(world, LocationNames.crystalline_grotto_left_region, LocationNames.crystalline_grotto_top_region, upgraded_kanan_rule, True)
-    connect(world, LocationNames.crystalline_grotto_left_region, LocationNames.crystalline_grotto_center_region, chika_block_rule & CanReachRegion(LocationNames.crystalline_grotto_center_save_region), True)
-    connect(world, LocationNames.crystalline_grotto_center_region, LocationNames.crystalline_grotto_left_region, upgraded_ruby_rule & CanReachRegion(LocationNames.crystalline_grotto_center_save_region), True)
-    connect(world, LocationNames.crystalline_grotto_left_region, LocationNames.crystalline_grotto_center_save_region, upgraded_ruby_rule, True)
-    connect(world, LocationNames.crystalline_grotto_left_region, LocationNames.crystalline_grotto_left_center_save_region, None)
+    connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_center_region, chika_block_rule & CanReachRegion(LocationNames.crystalline_grotto_center_save_region), True)
+    connect(world, LocationNames.crystalline_grotto_center_region, LocationNames.crystalline_grotto_entrance_region, upgraded_ruby_rule & CanReachRegion(LocationNames.crystalline_grotto_center_save_region), True)
+    connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_center_save_region, upgraded_ruby_rule, True)
+    connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_left_center_save_region, you_rule, True)
+    connect(world, LocationNames.crystalline_grotto_left_center_save_region, LocationNames.crystalline_grotto_entrance_region, None, True)
     connect(world, LocationNames.crystalline_grotto_left_center_save_region, LocationNames.crystalline_grotto_center_save_region, None, True)
+    connect(world, LocationNames.crystalline_grotto_left_center_save_region, LocationNames.crystalline_grotto_post_boss_region, None, True)
+    connect(world, LocationNames.crystalline_grotto_post_boss_region, LocationNames.crystalline_grotto_left_center_save_region, dia_rule | gloves_rule | soarshoes_rule, True)
     connect(world, LocationNames.crystalline_grotto_center_save_region, LocationNames.crystalline_grotto_left_center_save_region, soarshoes_rule | gloves_rule, True)
     connect(world, LocationNames.crystalline_grotto_center_save_region, LocationNames.crystalline_grotto_center_region, None, True)
     connect(world, LocationNames.crystalline_grotto_center_region, LocationNames.crystalline_grotto_top_save_region, gloves_rule, True)
@@ -376,7 +379,7 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.crystalline_grotto_right_save_region, LocationNames.crystalline_grotto_bottom_region, None, True)
     connect(world, LocationNames.crystalline_grotto_bottom_region, LocationNames.crystalline_grotto_center_region, chika_block_rule, True)
     connect(world, LocationNames.crystalline_grotto_bottom_region, LocationNames.crystalline_grotto_boss_region, dia_rule | (gloves_rule & soarshoes_rule), True)
-    connect(world, LocationNames.crystalline_grotto_boss_region, LocationNames.crystalline_grotto_left_region, mari_rule, True)
+    connect(world, LocationNames.crystalline_grotto_boss_region, LocationNames.crystalline_grotto_post_boss_region, mari_rule, True)
 
     connect(world, LocationNames.sunken_volcano_top_region, LocationNames.sunken_volcano_main_region, None, True)
     connect(world, LocationNames.sunken_volcano_top_region, LocationNames.sunken_volcano_boss_region, soarshoes_rule | (you_rule & gloves_rule), True)

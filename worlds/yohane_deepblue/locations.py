@@ -302,7 +302,9 @@ sea_of_trees_center_save_region_locations = set()
 sea_of_trees_center_chika_region_locations = set()
 
 
-crystalline_grotto_entrance_region_locations = set()
+crystalline_grotto_entrance_region_locations = {
+    LocationNames.one_way_slide_room_chest,
+}
 
 crystalline_grotto_left_save_region_locations = set()
 
@@ -324,9 +326,7 @@ crystalline_grotto_bottom_region_locations = {
     LocationNames.looong_slide_room_chest,
 }
 
-crystalline_grotto_left_region_locations = {
-    LocationNames.one_way_slide_room_chest,
-}
+crystalline_grotto_post_boss_region_locations = set()
 
 crystalline_grotto_center_region_locations = set()
 
@@ -476,7 +476,7 @@ location_groups: dict[str, set[str]] = {
                    coral_hill_bottom_entrance_region_locations),
     "Crystalline Grotto": (crystalline_grotto_entrance_region_locations | crystalline_grotto_left_save_region_locations | crystalline_grotto_top_left_save_region_locations |
                            crystalline_grotto_top_region_locations | crystalline_grotto_top_save_region_locations | crystalline_grotto_random_region_locations |
-                           crystalline_grotto_right_save_region_locations | crystalline_grotto_bottom_region_locations | crystalline_grotto_left_region_locations |
+                           crystalline_grotto_right_save_region_locations | crystalline_grotto_bottom_region_locations | crystalline_grotto_post_boss_region_locations |
                            crystalline_grotto_center_region_locations | crystalline_grotto_center_save_region_locations | crystalline_grotto_left_center_save_region_locations |
                            crystalline_grotto_mari_chest_region_locations | crystalline_grotto_boss_region_locations),
     "Shipwreck": (shipwreck_left_region_locations | shipwreck_left_mast_region_locations | shipwreck_main_region_locations | shipwreck_bottom_region_locations | 
