@@ -358,7 +358,7 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_center_region, chika_block_rule & CanReachRegion(LocationNames.crystalline_grotto_center_save_region), True)
     connect(world, LocationNames.crystalline_grotto_center_region, LocationNames.crystalline_grotto_entrance_region, upgraded_ruby_rule & CanReachRegion(LocationNames.crystalline_grotto_center_save_region), True)
     connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_center_save_region, upgraded_ruby_rule, True)
-    connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_left_center_save_region, you_rule, True)
+    connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_left_center_save_region, you_skip_rule, True)
     connect(world, LocationNames.crystalline_grotto_left_center_save_region, LocationNames.crystalline_grotto_entrance_region, None, True)
     connect(world, LocationNames.crystalline_grotto_left_center_save_region, LocationNames.crystalline_grotto_center_save_region, None, True)
     connect(world, LocationNames.crystalline_grotto_left_center_save_region, LocationNames.crystalline_grotto_post_boss_region, None, True)
