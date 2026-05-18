@@ -301,6 +301,8 @@ sea_of_trees_center_save_region_locations = set()
 
 sea_of_trees_center_chika_region_locations = set()
 
+sea_of_trees_long_slide_region_locations = set()
+
 
 crystalline_grotto_entrance_region_locations = {
     LocationNames.one_way_slide_room_chest,
@@ -396,6 +398,8 @@ shipwreck_postal_guild_bag_region_locations = {
     LocationNames.postal_guild_bag_room,
 }
 
+shipwreck_post_postal_guild_bag_region_locations = set()
+
 shipwreck_gloves_region_locations = {
     LocationNames.gloves_of_might_room_chest,
 }
@@ -479,12 +483,13 @@ location_groups: dict[str, set[str]] = {
                            crystalline_grotto_right_save_region_locations | crystalline_grotto_bottom_region_locations | crystalline_grotto_post_boss_region_locations |
                            crystalline_grotto_center_region_locations | crystalline_grotto_center_save_region_locations | crystalline_grotto_left_center_save_region_locations |
                            crystalline_grotto_mari_chest_region_locations | crystalline_grotto_boss_region_locations),
-    "Shipwreck": (shipwreck_left_region_locations | shipwreck_left_mast_region_locations | shipwreck_main_region_locations | shipwreck_bottom_region_locations | 
-                  shipwreck_sealed_off_chest_region_locations | shipwreck_postal_guild_bag_region_locations | shipwreck_gloves_region_locations | 
-                  shipwreck_top_gloves_region_locations | shipwreck_right_mast_region_locations | shipwreck_top_entrance_region_locations | shipwreck_boss_region_locations |
-                  shipwreck_right_entrance_region_locations),
+    "Shipwreck": (shipwreck_left_region_locations | shipwreck_left_mast_region_locations | shipwreck_main_region_locations | shipwreck_bottom_region_locations |
+                  shipwreck_sealed_off_chest_region_locations | shipwreck_postal_guild_bag_region_locations | shipwreck_post_postal_guild_bag_region_locations |
+                  shipwreck_gloves_region_locations | shipwreck_top_gloves_region_locations | shipwreck_right_mast_region_locations | shipwreck_top_entrance_region_locations |
+                  shipwreck_boss_region_locations | shipwreck_right_entrance_region_locations),
     "Sea of Trees": (sea_of_trees_main_region_locations | sea_of_trees_random_region_locations | sea_of_trees_right_region_locations | sea_of_trees_top_left_region_locations |
-                     sea_of_trees_boss_region_locations | sea_of_trees_post_boss_region_locations | sea_of_trees_center_save_region_locations | sea_of_trees_center_chika_region_locations),
+                     sea_of_trees_boss_region_locations | sea_of_trees_post_boss_region_locations | sea_of_trees_center_save_region_locations | 
+                     sea_of_trees_center_chika_region_locations | sea_of_trees_long_slide_region_locations),
     "Infernal Altar": infernal_altar_region_locations,
     "Aqours Memoria": {boss for boss in aqours_memoria_region_locations if location_table[boss] is not None},
 }

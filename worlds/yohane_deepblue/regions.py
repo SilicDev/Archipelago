@@ -66,6 +66,7 @@ def create_regions(world: World, active_locations: dict[str, int]) -> None:
     sea_of_trees_post_boss_region = create_region(world, LocationNames.sea_of_trees_post_boss_region, active_locations, sea_of_trees_post_boss_region_locations)
     sea_of_trees_center_save_region = create_region(world, LocationNames.sea_of_trees_center_save_region, active_locations, sea_of_trees_center_save_region_locations)
     sea_of_trees_center_chika_region = create_region(world, LocationNames.sea_of_trees_center_chika_region, active_locations, sea_of_trees_center_chika_region_locations)
+    sea_of_trees_long_slide_region = create_region(world, LocationNames.sea_of_trees_long_slide_region, active_locations, sea_of_trees_long_slide_region_locations)
 
     crystalline_grotto_entrance_region = create_region(world, LocationNames.crystalline_grotto_entrance_region, active_locations, crystalline_grotto_entrance_region_locations)
     crystalline_grotto_left_save_region = create_region(world, LocationNames.crystalline_grotto_left_save_region, active_locations, crystalline_grotto_left_save_region_locations)
@@ -97,6 +98,7 @@ def create_regions(world: World, active_locations: dict[str, int]) -> None:
     shipwreck_bottom_region = create_region(world, LocationNames.shipwreck_bottom_region, active_locations, shipwreck_bottom_region_locations)
     shipwreck_sealed_off_chest_region = create_region(world, LocationNames.shipwreck_sealed_off_chest_region, active_locations, shipwreck_sealed_off_chest_region_locations)
     shipwreck_postal_guild_bag_region = create_region(world, LocationNames.shipwreck_postal_guild_bag_region, active_locations, shipwreck_postal_guild_bag_region_locations)
+    shipwreck_post_postal_guild_bag_region = create_region(world, LocationNames.shipwreck_post_postal_guild_bag_region, active_locations, shipwreck_post_postal_guild_bag_region_locations)
     shipwreck_gloves_region = create_region(world, LocationNames.shipwreck_gloves_region, active_locations, shipwreck_gloves_region_locations)
     shipwreck_top_gloves_region = create_region(world, LocationNames.shipwreck_top_gloves_region, active_locations, shipwreck_top_gloves_region_locations)
     shipwreck_right_mast_region = create_region(world, LocationNames.shipwreck_right_mast_region, active_locations, shipwreck_right_mast_region_locations)
@@ -168,6 +170,7 @@ def create_regions(world: World, active_locations: dict[str, int]) -> None:
         sea_of_trees_post_boss_region,
         sea_of_trees_center_save_region,
         sea_of_trees_center_chika_region,
+        sea_of_trees_long_slide_region,
 
         crystalline_grotto_entrance_region,
         crystalline_grotto_left_save_region,
@@ -199,6 +202,7 @@ def create_regions(world: World, active_locations: dict[str, int]) -> None:
         shipwreck_bottom_region,
         shipwreck_sealed_off_chest_region,
         shipwreck_postal_guild_bag_region,
+        shipwreck_post_postal_guild_bag_region,
         shipwreck_gloves_region,
         shipwreck_top_gloves_region,
         shipwreck_right_mast_region,
@@ -278,9 +282,13 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.shipwreck_left_mast_region, LocationNames.shipwreck_main_region, None, True)
     connect(world, LocationNames.shipwreck_main_region, LocationNames.shipwreck_left_mast_region, gloves_rule, True)
 
-    connect(world, LocationNames.shipwreck_bottom_region, LocationNames.shipwreck_postal_guild_bag_region, 
-            (you_skip_rule & kanan_rule & gloves_rule & soarshoes_rule) | (chika_block_rule & upgraded_mari_rule), True)
-    connect(world, LocationNames.shipwreck_postal_guild_bag_region, LocationNames.shipwreck_bottom_region, kanan_rule | upgraded_mari_rule, True)
+    connect(world, LocationNames.shipwreck_bottom_region, LocationNames.shipwreck_postal_guild_bag_region, chika_block_rule & upgraded_mari_rule, True)
+
+    connect(world, LocationNames.shipwreck_postal_guild_bag_region, LocationNames.shipwreck_post_postal_guild_bag_region, kanan_rule | upgraded_mari_rule, True)
+    connect(world, LocationNames.shipwreck_post_postal_guild_bag_region, LocationNames.shipwreck_postal_guild_bag_region, kanan_rule & gloves_rule, True)
+
+    connect(world, LocationNames.shipwreck_bottom_region, LocationNames.shipwreck_post_postal_guild_bag_region, you_skip_rule , True)
+    connect(world, LocationNames.shipwreck_postal_guild_bag_region, LocationNames.shipwreck_bottom_region, None, True)
 
     connect(world, LocationNames.shipwreck_bottom_region, LocationNames.shipwreck_sealed_off_chest_region, riko_rule)
 
@@ -340,14 +348,14 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.coral_hill_random_save_region, LocationNames.coral_hill_bottom_region, None, True)
     connect(world, LocationNames.coral_hill_bottom_region, LocationNames.coral_hill_random_save_region, gloves_rule, True)
 
-    connect(world, LocationNames.coral_hill_random_save_region, LocationNames.coral_hill_random_region, soarshoes_rule | gloves_rule, True)
+    connect(world, LocationNames.coral_hill_random_save_region, LocationNames.coral_hill_random_region, soarshoes_rule | gloves_rule | you_rule, True)
     connect(world, LocationNames.coral_hill_random_region, LocationNames.coral_hill_random_save_region, None, True)
 
     connect(world, LocationNames.coral_hill_random_region, LocationNames.coral_hill_post_random_region, gloves_rule, True)
 
     connect(world, LocationNames.coral_hill_post_random_region, LocationNames.coral_hill_soarshoesnt_chest_region, None, True)
 
-    connect(world, LocationNames.coral_hill_random_save_region, LocationNames.coral_hill_soarshoesnt_chest_region, soarshoes_rule & gloves_rule, True)
+    connect(world, LocationNames.coral_hill_random_save_region, LocationNames.coral_hill_soarshoesnt_chest_region, soarshoes_rule & (gloves_rule | you_rule), True)
     connect(world, LocationNames.coral_hill_soarshoesnt_chest_region, LocationNames.coral_hill_random_save_region, None, True)
 
     connect(world, LocationNames.coral_hill_post_random_region, LocationNames.coral_hill_center_save_region, gloves_rule, True)
@@ -408,7 +416,7 @@ def connect_regions(world: World) -> None:
 
 
     # Sea of Trees
-    connect(world, LocationNames.sea_of_trees_main_region, LocationNames.sea_of_trees_random_region, (soarshoes_rule | gloves_rule) & upgraded_kanan_rule, True)
+    connect(world, LocationNames.sea_of_trees_main_region, LocationNames.sea_of_trees_random_region, (soarshoes_rule | gloves_rule | you_rule) & you_skip_rule & upgraded_kanan_rule, True)
     connect(world, LocationNames.sea_of_trees_random_region, LocationNames.sea_of_trees_main_region, kanan_rule, True)
 
     connect(world, LocationNames.sea_of_trees_main_region, LocationNames.sea_of_trees_center_save_region, chika_block_rule | soarshoes_rule, True)
@@ -426,10 +434,13 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.sea_of_trees_right_region, LocationNames.sea_of_trees_boss_region, None, True)
     connect(world, LocationNames.sea_of_trees_boss_region, LocationNames.sea_of_trees_right_region, you_rule, True)
 
-    connect(world, LocationNames.sea_of_trees_right_region, LocationNames.sea_of_trees_top_left_region, soarshoes_rule)
+    connect(world, LocationNames.sea_of_trees_right_region, LocationNames.sea_of_trees_top_left_region, soarshoes_rule | gloves_rule)
 
-    connect(world, LocationNames.sea_of_trees_random_region, LocationNames.sea_of_trees_top_left_region, soarshoes_rule & gloves_rule & you_skip_rule, True)
-    connect(world, LocationNames.sea_of_trees_top_left_region, LocationNames.sea_of_trees_random_region, gloves_rule | you_skip_rule, True)
+    connect(world, LocationNames.sea_of_trees_long_slide_region, LocationNames.sea_of_trees_top_left_region, (soarshoes_rule | gloves_rule) & you_rule, True)
+    connect(world, LocationNames.sea_of_trees_top_left_region, LocationNames.sea_of_trees_long_slide_region, gloves_rule | you_skip_rule, True)
+
+    connect(world, LocationNames.sea_of_trees_random_region, LocationNames.sea_of_trees_long_slide_region, soarshoes_rule & gloves_rule, True)
+    connect(world, LocationNames.sea_of_trees_long_slide_region, LocationNames.sea_of_trees_random_region, None, True)
 
     connect(world, LocationNames.sea_of_trees_boss_region, LocationNames.sea_of_trees_post_boss_region, None, True)
 
@@ -439,10 +450,11 @@ def connect_regions(world: World) -> None:
 
     connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_post_boss_region, hanamaru_rule) # you_rule on hard
 
-    connect(world, LocationNames.crystalline_grotto_left_save_region, LocationNames.crystalline_grotto_top_left_save_region, gloves_rule, True)
+    connect(world, LocationNames.crystalline_grotto_left_save_region, LocationNames.crystalline_grotto_top_left_save_region, gloves_rule | (soarshoes_rule & you_rule), True)
     connect(world, LocationNames.crystalline_grotto_top_left_save_region, LocationNames.crystalline_grotto_left_save_region, None, True)
 
-    connect(world, LocationNames.crystalline_grotto_top_left_save_region, LocationNames.crystalline_grotto_top_region, soarshoes_rule | gloves_rule)
+    connect(world, LocationNames.crystalline_grotto_top_left_save_region, LocationNames.crystalline_grotto_top_region, None, True)
+    connect(world, LocationNames.crystalline_grotto_top_region, LocationNames.crystalline_grotto_top_left_save_region, soarshoes_rule | gloves_rule | you_rule, True)
 
     connect(world, LocationNames.crystalline_grotto_top_region, LocationNames.crystalline_grotto_entrance_region, kanan_rule, True)
     connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_top_region, upgraded_kanan_rule, True)
@@ -461,7 +473,7 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.crystalline_grotto_left_center_save_region, LocationNames.crystalline_grotto_entrance_region, None, True)
 
     connect(world, LocationNames.crystalline_grotto_left_center_save_region, LocationNames.crystalline_grotto_center_save_region, None, True)
-    connect(world, LocationNames.crystalline_grotto_center_save_region, LocationNames.crystalline_grotto_left_center_save_region, soarshoes_rule | gloves_rule, True)
+    connect(world, LocationNames.crystalline_grotto_center_save_region, LocationNames.crystalline_grotto_left_center_save_region, soarshoes_rule | gloves_rule | you_rule, True)
 
     connect(world, LocationNames.crystalline_grotto_left_center_save_region, LocationNames.crystalline_grotto_post_boss_region, None, True)
     connect(world, LocationNames.crystalline_grotto_post_boss_region, LocationNames.crystalline_grotto_left_center_save_region, dia_rule | gloves_rule | soarshoes_rule, True)
