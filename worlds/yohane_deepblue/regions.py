@@ -541,7 +541,7 @@ def connect_regions(world: World) -> None:
 
 def create_region(world: World, name: str, active_locations: dict[str, int], location_set: set[str]) -> Region:
     region = Region(name, world.player, world.multiworld)
-    for location in location_set:
+    for location in sorted(location_set):
         code = active_locations.get(location, 0)
         if location in active_locations.keys():
             region.locations.append(YohaneDeepblueLocation(world.player, location, code, region))

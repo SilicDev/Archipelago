@@ -7,6 +7,18 @@ from Options import (Choice, DeathLinkMixin, DefaultOnToggle, OptionSet, NamedRa
                      PerGameCommonOptions, OptionGroup, StartInventory, StartInventoryPool, OptionList)
 
 
+class LogicDifficulty(Choice):
+    """
+    Sets general logic difficulty. Specific skips can be toggled with other settings.
+
+    Easy: No unintended skips are enabled.
+    Hard: Various damage boost and similar strats are enabled.
+    """
+    display_name = "Logic Difficulty"
+    option_easy = 0
+    option_hard = 2
+    default = option_easy
+
 class EarlyChikaBlockMoved(DefaultOnToggle):
     """
     Moves some early Chika blocks to open up the randomizer.
@@ -66,6 +78,7 @@ class DamageLinkGroup(FreeText):
 
 yohane_deepblue_option_groups = [
     OptionGroup("Logic Customization", [
+        LogicDifficulty,
         EarlyChikaBlockMoved,
         EnableYouSkips
     ])
@@ -94,6 +107,7 @@ class YohaneDeepblueOptions(PerGameCommonOptions, DeathLinkGroupMixin, DamageLin
     progressive_character_unlocks: ProgressiveCharacterUnlocks
     upgrade_hints: UpgradeHints
 
+    logic_difficulty: LogicDifficulty
     early_chika_blocks_moved: EarlyChikaBlockMoved
     enable_you_skips: EnableYouSkips
 

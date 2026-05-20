@@ -89,6 +89,9 @@ class YohaneDeepblueCommandProcessor(ClientCommandProcessor):
 
     def _cmd_deathlink(self):
         """Toggles Deathlink"""
+        if "_read_race_mode" in self.ctx.stored_data and self.ctx.stored_data["_read_race_mode"]:
+            self.output(f"Death Link cannot be toggled manually during a race!")
+            return
         if self.ctx.deathlink_enabled:
             self.ctx.deathlink_enabled = False
             self.output(f"Death Link turned off")
@@ -98,6 +101,9 @@ class YohaneDeepblueCommandProcessor(ClientCommandProcessor):
 
     async def _cmd_deathlink_group(self, group: str = ""):
         """Sets Deathlink group"""
+        if "_read_race_mode" in self.ctx.stored_data and self.ctx.stored_data["_read_race_mode"]:
+            self.output(f"Death Link Group cannot be changed manually during a race!")
+            return
         if group != self.ctx.death_link_group:
             await self.ctx.update_death_link_group(group)
             if group == "":
@@ -109,6 +115,9 @@ class YohaneDeepblueCommandProcessor(ClientCommandProcessor):
 
     def _cmd_damagelink(self):
         """Toggles Damagelink"""
+        if "_read_race_mode" in self.ctx.stored_data and self.ctx.stored_data["_read_race_mode"]:
+            self.output(f"Damage Link cannot be toggled manually during a race!")
+            return
         if self.ctx.damagelink_enabled:
             self.ctx.damagelink_enabled = False
             self.output(f"Damage Link turned off")
@@ -118,6 +127,9 @@ class YohaneDeepblueCommandProcessor(ClientCommandProcessor):
 
     async def _cmd_damagelink_group(self, group: str = ""):
         """Sets Damagelink group"""
+        if "_read_race_mode" in self.ctx.stored_data and self.ctx.stored_data["_read_race_mode"]:
+            self.output(f"Damage Link Group cannot be changed manually during a race!")
+            return
         if group != self.ctx.damage_link_group:
             await self.ctx.update_damage_link_group(group)
             if group == "":

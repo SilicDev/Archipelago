@@ -88,10 +88,10 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
         num_locations_to_fill = len(self.multiworld.get_unfilled_locations(self.player))
         itempool: list[Item] = []
         for item in unique_accessories_table.keys():
-            for i in range(unique_accessories_table[item].quantity):
+            for _ in range(unique_accessories_table[item].quantity):
                 itempool.append(self.create_item(item))
         for item in rare_material_table.keys():
-            for i in range(rare_material_table[item].quantity):
+            for _ in range(rare_material_table[item].quantity):
                 itempool.append(self.create_item(item))
         if self.options.progressive_character_unlocks == Toggle.option_true:
             for item in progressive_character_table.keys():
@@ -128,8 +128,8 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
         self.multiworld.completion_condition[self.player] = lambda state: state.has(ItemNames.victory, self.player)
     
     def get_filler_item_name(self) -> str:
-        junk_items = list(junk_table)
-        return self.random.choice(junk_items)
+        junk_items = sorted(junk_table)
+        return self.multiworld.random.choice(junk_items)
     
     def fill_slot_data(self) -> dict[str, typing.Any]:
         slot_data = self.options.as_dict(
