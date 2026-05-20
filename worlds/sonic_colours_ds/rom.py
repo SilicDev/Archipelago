@@ -14,7 +14,7 @@ ROM_NAME = b"SONICCOLORS\0"
 PATCHED_NAME = b"SONICCLR:AP\0"
 
 class SonicColoursDSProcedurePatch(APProcedurePatch, APTokenMixin):
-    game = "Sonic Colours DS"
+    game = "Sonic Colours (DS)"
     hash = EU_HASH
     patch_file_ending = ".apscds"
     result_file_ending = ".nds"
