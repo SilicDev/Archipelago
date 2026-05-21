@@ -145,3 +145,12 @@ item_to_rings = {
     ItemNames.ten_rings: 10,
     ItemNames.twenty_rings: 20,
 }
+
+planet_names_to_unlock = {
+    "Tropical Resort": ItemNames.tropical_resort_unlock,
+    "Sweet Mountain": ItemNames.sweet_mountain_unlock,
+    "Starlight Carnival": ItemNames.starlight_carnival_unlock,
+    "Planet Wisp": ItemNames.planet_wisp_unlock,
+    "Aquarium Park": ItemNames.aquarium_park_unlock,
+    "Asteroid Coaster": ItemNames.asteroid_coaster_unlock,
+}

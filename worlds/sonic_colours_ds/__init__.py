@@ -7,11 +7,10 @@ import typing
 
 import settings
 from BaseClasses import Item, ItemClassification, MultiWorld, Tutorial
-from Options import OptionError
 from worlds.AutoWorld import WebWorld, World
 
-from .data import ItemNames, LocationNames
 from .client import SonicColoursDSClient  # noqa: F401
+from .data import DataMaps, ItemNames, LocationNames
 from .items import (
     SonicColoursDSItem,
     emeralds_table,
@@ -77,7 +76,14 @@ class SonicColoursDSWorld(World):
 
     required_client_version = (0, 6, 6)
 
-    starting_planet_access: list[str] = [ItemNames.tropical_resort_unlock] # Todo: convert to option
+    def __init__(self, multiworld: MultiWorld, player: int):
+        self.starting_planet_access: list[str] = []
+        super().__init__(multiworld, player)
+
+    def generate_early(self) -> None:
+        for key in sorted(self.options.starting_planets.value):
+            self.starting_planet_access.append(DataMaps.planet_names_to_unlock[key])
+        return super().generate_early()
 
     def create_regions(self) -> None:
         active_locations = setup_locations(self, self.player)

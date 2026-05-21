@@ -51,6 +51,8 @@ class RankRequirement(Choice):
 class StartingPlanets(OptionSet):
     """
     The planets that are accessible from the start.
+
+    Note that Planet Wisp alone will lead to very restrictive starts and generation failures.
     """
     display_name = "Starting Planets"
     valid_keys = frozenset(DataMaps.planet_names_to_unlock.keys())
