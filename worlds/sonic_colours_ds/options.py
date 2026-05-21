@@ -3,8 +3,26 @@ Option definitions for Sonic Colours (DS)
 """
 from dataclasses import dataclass
 
-from Options import (Choice, DeathLink, DefaultOnToggle, OptionSet, NamedRange, Range, Toggle, FreeText,
-                     PerGameCommonOptions, OptionGroup, StartInventory, OptionList)
+from BaseClasses import PlandoOptions
+from Options import (
+    Choice,
+    DeathLink,
+    DefaultOnToggle,
+    FreeText,
+    NamedRange,
+    OptionError,
+    OptionGroup,
+    OptionList,
+    OptionSet,
+    PerGameCommonOptions,
+    Range,
+    StartInventory,
+    Toggle,
+)
+from worlds.AutoWorld import World
+
+from .data import DataMaps
+
 
 class Goal(Choice):
     """
@@ -30,6 +48,19 @@ class RankRequirement(Choice):
     option_rank_a = 3
     option_rank_s = 4
 
+class StartingPlanets(OptionSet):
+    """
+    The planets that are accessible from the start.
+    """
+    display_name = "Starting Planets"
+    valid_keys = frozenset(DataMaps.planet_names_to_unlock.keys())
+    default = frozenset({"Tropical Resort"})
+
+    def verify(self, world: type[World], player_name: str, plando_options: PlandoOptions) -> None:
+        super().verify(world, player_name, plando_options)
+        if len(self.value) == 0:
+            raise OptionError("At least one key has to be selected for option StartingPlanets!")
+
 class RedRingSanity(Toggle):
     """
     Collecting a Red Star Ring gives you an item.
@@ -50,5 +81,7 @@ scds_option_groups = [
 class SonicColoursDSOptions(PerGameCommonOptions):
     goal: Goal
     rankrequirement: RankRequirement
+
+    starting_planets: StartingPlanets
 
     redringsanity: RedRingSanity

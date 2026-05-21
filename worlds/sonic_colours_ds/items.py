@@ -4,8 +4,9 @@ from BaseClasses import Item
 
 from .data import ItemNames
 
+
 class ItemData(typing.NamedTuple):
-    code: typing.Optional[int]
+    code: int | None
     progression: bool
     quantity: int = 1
 

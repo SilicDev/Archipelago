@@ -1,11 +1,12 @@
-from worlds.generic.Rules import add_rule, set_rule, forbid_item, add_item_rule
 from worlds.AutoWorld import World
+from worlds.generic.Rules import set_rule
 
-from .data import LocationNames, ItemNames
+from .data import ItemNames, LocationNames
+
 
 def set_rules(world: World) -> None:
     if world.options.goal.value == 1:
-        set_rule(world.get_location(LocationNames.nega_mother_wisp), 
+        set_rule(world.get_location(LocationNames.nega_mother_wisp),
                 lambda state: state.has_all([
                     ItemNames.white_emerald,
                     ItemNames.red_emerald,
@@ -15,7 +16,7 @@ def set_rules(world: World) -> None:
                     ItemNames.yellow_emerald,
                     ItemNames.blue_emerald,
                 ], world.player))
-    set_rule(world.get_location(LocationNames.nega_wisp_armor), 
+    set_rule(world.get_location(LocationNames.nega_wisp_armor),
              lambda state: state.has_all([
                 ItemNames.red_wisp_unlock,
                 ItemNames.orange_wisp_unlock,
@@ -59,7 +60,7 @@ def set_level_rules(world: World) -> None:
             lambda state: state.has(ItemNames.white_wisp_unlock, world.player))
     set_rule(world.get_location(LocationNames.tropical_resort_mission_3),
             lambda state: state.has(ItemNames.white_wisp_unlock, world.player))
-    
+
     # Sweet Mountain
     set_rule(world.get_location(LocationNames.red_wisp_tutorial),
             lambda state: state.has(ItemNames.red_wisp_unlock, world.player))
@@ -75,7 +76,7 @@ def set_level_rules(world: World) -> None:
             lambda state: state.has(ItemNames.white_wisp_unlock, world.player))
     set_rule(world.get_location(LocationNames.sweet_mountain_mission_3),
             lambda state: state.has(ItemNames.red_wisp_unlock, world.player))
-    
+
     # Starlight Carnival
     set_rule(world.get_location(LocationNames.orange_wisp_tutorial),
             lambda state: state.has(ItemNames.orange_wisp_unlock, world.player))
@@ -98,7 +99,7 @@ def set_level_rules(world: World) -> None:
                 ItemNames.white_wisp_unlock,
                 ItemNames.orange_wisp_unlock
             ], world.player))
-    
+
     # Planet Wisp
     set_rule(world.get_location(LocationNames.yellow_wisp_tutorial),
             lambda state: state.has(ItemNames.yellow_wisp_unlock, world.player))
@@ -166,7 +167,7 @@ def set_level_rules(world: World) -> None:
                 ItemNames.cyan_wisp_unlock,
                 ItemNames.violet_wisp_unlock
             ], world.player)) # TODO: Make Boost/Laser dependent on Rando Difficulty
-    
+
     # Terminal Velocity
     set_rule(world.get_location(LocationNames.terminal_velocity_chase),
             lambda state: state.has(ItemNames.white_wisp_unlock, world.player)) # TODO: Make this dependent on Rando Difficulty
@@ -175,7 +176,7 @@ def set_red_ring_rules(world: World) -> None:
     # Tropical Resort Act 1
     set_rule(world.get_location(LocationNames.tropical_resort_act_1_red_ring_2),
             lambda state: state.has(ItemNames.red_wisp_unlock, world.player))
-    
+
     # Tropical Resort Act 2
     set_rule(world.get_location(LocationNames.tropical_resort_act_2_red_ring_1),
             lambda state: state.has(ItemNames.white_wisp_unlock, world.player))
@@ -243,7 +244,7 @@ def set_red_ring_rules(world: World) -> None:
             lambda state: state.has(ItemNames.red_wisp_unlock, world.player))
     set_rule(world.get_location(LocationNames.sweet_mountain_mission_3_red_ring_2),
             lambda state: state.has(ItemNames.red_wisp_unlock, world.player))
-    
+
     # Starlight Carnival Act 1
     set_rule(world.get_location(LocationNames.starlight_carnival_act_1_red_ring_2),
             lambda state: state.has(ItemNames.orange_wisp_unlock, world.player))
@@ -266,7 +267,7 @@ def set_red_ring_rules(world: World) -> None:
             lambda state: state.has(ItemNames.orange_wisp_unlock, world.player))
     set_rule(world.get_location(LocationNames.starlight_carnival_act_2_red_ring_5),
             lambda state: state.has(ItemNames.orange_wisp_unlock, world.player))
-    
+
     # Starlight Carnival Missions
     set_rule(world.get_location(LocationNames.starlight_carnival_mission_1_red_ring_2),
             lambda state: state.has(ItemNames.orange_wisp_unlock, world.player))

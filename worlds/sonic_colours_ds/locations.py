@@ -1,11 +1,10 @@
-import typing
-
-from Options import Toggle
 from BaseClasses import Location
+from Options import Toggle
 from worlds.AutoWorld import World
 
 from .data import LocationNames
 from .options import Goal
+
 
 class SonicColoursDSLocation(Location):
     game: str = "Sonic Colours (DS)"
@@ -52,7 +51,7 @@ level_clear_table = {
     LocationNames.sweet_mountain_mission_1: 33,
     LocationNames.sweet_mountain_mission_2: 34,
     LocationNames.sweet_mountain_mission_3: 35,
-    
+
     LocationNames.starlight_carnival_mission_1: 36,
     LocationNames.starlight_carnival_mission_2: 37,
     LocationNames.starlight_carnival_mission_3: 38,
@@ -79,7 +78,7 @@ red_rings_table = {
     LocationNames.tropical_resort_act_1_red_ring_3: 102,
     LocationNames.tropical_resort_act_1_red_ring_4: 103,
     LocationNames.tropical_resort_act_1_red_ring_5: 104,
-    
+
     LocationNames.tropical_resort_act_2_red_ring_1: 105,
     LocationNames.tropical_resort_act_2_red_ring_2: 106,
     LocationNames.tropical_resort_act_2_red_ring_3: 107,

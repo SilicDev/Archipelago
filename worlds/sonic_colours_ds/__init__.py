@@ -2,21 +2,31 @@
 Archipelago World definition for Sonic Colours (DS)
 """
 import os
-import typing
 import pkgutil
+import typing
 
-from BaseClasses import Item, ItemClassification, Region, Tutorial
 import settings
+from BaseClasses import Item, ItemClassification, MultiWorld, Tutorial
+from Options import OptionError
 from worlds.AutoWorld import WebWorld, World
 
-from .client import SonicColoursDSClient
-from .items import SonicColoursDSItem, item_groups, planet_access_table, wisp_unlocks_table, emeralds_table, item_table, event_table, junk_table
-from .locations import SonicColoursDSLocation, location_groups, location_table, setup_locations
-from .regions import create_regions, connect_regions
-from .rules import set_rules
-from .options import SonicColoursDSOptions, Goal, scds_option_groups
 from .data import ItemNames, LocationNames
+from .client import SonicColoursDSClient  # noqa: F401
+from .items import (
+    SonicColoursDSItem,
+    emeralds_table,
+    event_table,
+    item_groups,
+    item_table,
+    junk_table,
+    planet_access_table,
+    wisp_unlocks_table,
+)
+from .locations import location_groups, location_table, setup_locations
+from .options import Goal, SonicColoursDSOptions, scds_option_groups
+from .regions import connect_regions, create_regions
 from .rom import SonicColoursDSProcedurePatch, write_tokens
+from .rules import set_rules
 
 
 class SonicColoursDSWebWorld(WebWorld):
@@ -78,9 +88,11 @@ class SonicColoursDSWorld(World):
         for planet_access in self.starting_planet_access:
             self.multiworld.push_precollected(self.create_item(planet_access))
         if self.options.goal.value == Goal.option_wisp_armor:
-            self.multiworld.get_location(LocationNames.nega_wisp_armor, self.player).place_locked_item(self.create_item(ItemNames.park_keys))
+            self.multiworld.get_location(LocationNames.nega_wisp_armor, self.player).place_locked_item(
+                self.create_item(ItemNames.park_keys))
         elif self.options.goal.value == Goal.option_mother_wisp:
-            self.multiworld.get_location(LocationNames.nega_mother_wisp, self.player).place_locked_item(self.create_item(ItemNames.mother_wisp))
+            self.multiworld.get_location(LocationNames.nega_mother_wisp, self.player).place_locked_item(
+                self.create_item(ItemNames.mother_wisp))
 
         num_locations_to_fill = len(self.multiworld.get_unfilled_locations(self.player))
         itempool: list[Item] = []
@@ -88,7 +100,7 @@ class SonicColoursDSWorld(World):
         for item in wisp_unlocks_table.keys():
             itempool.append(self.create_item(item))
         for item in planet_access_table.keys():
-            if not item in self.starting_planet_access:
+            if item not in self.starting_planet_access:
                 itempool.append(self.create_item(item))
         if self.options.goal.value == Goal.option_mother_wisp:
             for item in emeralds_table.keys():
@@ -96,7 +108,7 @@ class SonicColoursDSWorld(World):
         surplus_checks = num_locations_to_fill - len(itempool)
         itempool += [self.create_filler() for _ in range(surplus_checks)]
         self.multiworld.itempool += itempool
-        
+
 
     def create_item(self, name: str) -> Item:
         data = None
@@ -107,17 +119,19 @@ class SonicColoursDSWorld(World):
         classification = ItemClassification.filler
         if data.progression:
             classification = ItemClassification.progression
-        item = SonicColoursDSItem(name, classification, data.code, self.player)
-        return item
+        return SonicColoursDSItem(name, classification, data.code, self.player)
 
     def set_rules(self) -> None:
         set_rules(self)
-        self.multiworld.completion_condition[self.player] = lambda state: state.has(ItemNames.park_keys if self.options.goal.value == Goal.option_wisp_armor else ItemNames.mother_wisp, self.player)  
+        if self.options.goal.value == Goal.option_wisp_armor:
+            self.multiworld.completion_condition[self.player] = lambda state: state.has(ItemNames.park_keys, self.player)
+        elif self.options.goal.value == Goal.option_mother_wisp:
+            self.multiworld.completion_condition[self.player] = lambda state: state.has(ItemNames.mother_wisp, self.player)
 
     def get_filler_item_name(self) -> str:
         junk_keys = list(junk_table.keys())
         return self.multiworld.random.choice(junk_keys)
-    
+
     def generate_output(self, output_directory: str) -> None:
         patch = SonicColoursDSProcedurePatch(player=self.player, player_name=self.player_name)
         patch.write_file("base_patch.bsdiff4", pkgutil.get_data(__name__, "data/base_patch.bsdiff4"))
@@ -125,11 +139,11 @@ class SonicColoursDSWorld(World):
         # Write Output
         out_file_name = self.multiworld.get_out_file_name_base(self.player)
         patch.write(os.path.join(output_directory, f"{out_file_name}{patch.patch_file_ending}"))
-    
+
     def fill_slot_data(self) -> dict[str, typing.Any]:
-        slot_data = self.options.as_dict(
+        return self.options.as_dict(
             "goal",
             "rankrequirement",
             "redringsanity",
+            "starting_planets"
         )
-        return slot_data

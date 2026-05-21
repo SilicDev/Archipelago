@@ -2,8 +2,8 @@
 import struct
 from typing import TYPE_CHECKING
 
-from worlds.Files import APProcedurePatch, APTokenMixin, APTokenTypes
 from settings import get_settings
+from worlds.Files import APProcedurePatch, APTokenMixin, APTokenTypes
 
 if TYPE_CHECKING:
     from . import SonicColoursDSWorld
@@ -27,9 +27,8 @@ class SonicColoursDSProcedurePatch(APProcedurePatch, APTokenMixin):
     @classmethod
     def get_source_data(cls) -> bytes:
         with open(get_settings().sonic_colours_ds_settings.rom_file, "rb") as infile:
-            base_rom_bytes = bytes(infile.read())
+            return bytes(infile.read())
 
-        return base_rom_bytes
 
 def write_tokens(world: "SonicColoursDSWorld", patch: SonicColoursDSProcedurePatch) -> None:
     patch.write_token(
@@ -40,7 +39,7 @@ def write_tokens(world: "SonicColoursDSWorld", patch: SonicColoursDSProcedurePat
     patch.write_token(
         APTokenTypes.WRITE,
         0x170,
-        struct.pack(f"<16s", world.player_name.encode("ascii", "replace"))
+        struct.pack("<16s", world.player_name.encode("ascii", "replace"))
     )
 
     patch.write_token(
