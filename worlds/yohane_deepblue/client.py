@@ -508,6 +508,7 @@ class YohaneDeepblueContext(CommonContext):
                     self.game_process.write_uchar(main_struct + STORED_MUSICAL_SCORE_COUNTER_OFFSET + ITEM_COUNT_OFFSET, self.stored_musical_scores)
 
                     for new_remotely_cleared_location in self.checked_locations - self.locations_checked:
+                        # other game collected item, clear location
                         location_name = location_id_to_name[new_remotely_cleared_location]
                         if location_name in DataMaps.chest_data_map.keys():
                             data = DataMaps.chest_data_map[location_name]
@@ -522,7 +523,7 @@ class YohaneDeepblueContext(CommonContext):
                             flag = DataMaps.boss_defeated_flag_map[location_name]
                             boss_defeated_flags |= flag
                             self.game_process.write_uint(main_struct + BOSS_DEFEATED_FLAGS, boss_defeated_flags)
-                        # other game collected item, clear location
+                        self.locations_checked.add(new_remotely_cleared_location)
                         pass
 
                     in_credits = self.game_process.read_uchar(flags_struct + OFFSET_IN_CREDITS)
@@ -568,7 +569,7 @@ class YohaneDeepblueContext(CommonContext):
             self.highest_received_item_index = 0
             self.local_received_items = {}
             self.hinted_quest_flags = 0
-            self.locations_checked = set(args["checked_locations"])
+            #self.locations_checked = set(args["checked_locations"])
             self.deathlink_enabled = self.slot_data.get("death_link", False)
             self.death_link_group = self.slot_data.get("death_link_group", "")
             self.deathlink_enabled = self.slot_data.get("death_link", False)
