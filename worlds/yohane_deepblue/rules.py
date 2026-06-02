@@ -88,6 +88,7 @@ def set_chest_rules(world: World) -> None:
     # Shipwreck
     world.set_rule(world.get_location(LocationNames.final_guard_room_chest), you_rule)
     world.set_rule(world.get_location(LocationNames.gloves_of_might_room_chest), chika_rule | you_skip_rule)
+    world.set_rule(world.get_location(LocationNames.postal_guild_bag_room), you_rule)
     
     # Coral Hill
     world.set_rule(world.get_location(LocationNames.lost_monstie_room_chest), mari_rule & upgraded_ruby_rule)
