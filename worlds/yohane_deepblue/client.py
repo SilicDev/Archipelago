@@ -1,26 +1,36 @@
 import asyncio
 import ctypes
 import enum
-from argparse import Namespace
 import time
-from typing import TYPE_CHECKING, Any, Dict
+from argparse import Namespace
 from collections.abc import Sequence
+from typing import TYPE_CHECKING, Any
+
+import colorama
+from pymem import pymem
 
 import Utils
-
-from .pymem_ex import PymemEX
-from pymem import pymem
-import colorama
-from CommonClient import ClientCommandProcessor, CommonContext, logger, get_base_parser, handle_url_arg, server_loop
+from CommonClient import ClientCommandProcessor, CommonContext, get_base_parser, handle_url_arg, logger, server_loop
 from NetUtils import ClientStatus
-from Utils import gui_enabled
 from Options import Toggle
+from Utils import gui_enabled
 
 from .data import DataMaps, ItemNames, LocationNames
-from .locations import location_table, lookup_id_to_name as location_id_to_name
-from .items import (item_table, unique_accessories_table, character_upgrade_table, stackables_set, equips_set, weapons_table, 
-                    accessories_table, yen_set, lookup_id_to_name as item_id_to_name)
+from .items import (
+    accessories_table,
+    character_upgrade_table,
+    equips_set,
+    item_table,
+    stackables_set,
+    unique_accessories_table,
+    weapons_table,
+    yen_set,
+)
+from .items import lookup_id_to_name as item_id_to_name
+from .locations import location_table
+from .locations import lookup_id_to_name as location_id_to_name
 from .options import UpgradeHints
+from .pymem_ex import PymemEX
 
 if TYPE_CHECKING:
     import kvui
@@ -76,7 +86,7 @@ class YohaneDeepblueCommandProcessor(ClientCommandProcessor):
             "source": self.ctx.player_names[self.ctx.slot],
             "cause": ""
         })
-    
+
     def _cmd_debug(self) -> None:
         """
         Toggle debug logging.
@@ -89,25 +99,25 @@ class YohaneDeepblueCommandProcessor(ClientCommandProcessor):
 
     def _cmd_deathlink(self):
         """Toggles Deathlink"""
-        if "_read_race_mode" in self.ctx.stored_data and self.ctx.stored_data["_read_race_mode"]:
-            self.output(f"Death Link cannot be toggled manually during a race!")
+        if self.ctx.stored_data.get("_read_race_mode"):
+            self.output("Death Link cannot be toggled manually during a race!")
             return
         if self.ctx.deathlink_enabled:
             self.ctx.deathlink_enabled = False
-            self.output(f"Death Link turned off")
+            self.output("Death Link turned off")
         else:
             self.ctx.deathlink_enabled = True
-            self.output(f"Death Link turned on")
+            self.output("Death Link turned on")
 
     async def _cmd_deathlink_group(self, group: str = ""):
         """Sets Deathlink group"""
-        if "_read_race_mode" in self.ctx.stored_data and self.ctx.stored_data["_read_race_mode"]:
-            self.output(f"Death Link Group cannot be changed manually during a race!")
+        if self.ctx.stored_data.get("_read_race_mode"):
+            self.output("Death Link Group cannot be changed manually during a race!")
             return
         if group != self.ctx.death_link_group:
             await self.ctx.update_death_link_group(group)
             if group == "":
-                self.output(f"Death Link group changed to global default group")
+                self.output("Death Link group changed to global default group")
             else:
                 self.output(f"Death Link group changed to '{group}'")
         else:
@@ -115,30 +125,30 @@ class YohaneDeepblueCommandProcessor(ClientCommandProcessor):
 
     def _cmd_damagelink(self):
         """Toggles Damagelink"""
-        if "_read_race_mode" in self.ctx.stored_data and self.ctx.stored_data["_read_race_mode"]:
-            self.output(f"Damage Link cannot be toggled manually during a race!")
+        if self.ctx.stored_data.get("_read_race_mode"):
+            self.output("Damage Link cannot be toggled manually during a race!")
             return
         if self.ctx.damagelink_enabled:
             self.ctx.damagelink_enabled = False
-            self.output(f"Damage Link turned off")
+            self.output("Damage Link turned off")
         else:
             self.ctx.damagelink_enabled = True
-            self.output(f"Damage Link turned on")
+            self.output("Damage Link turned on")
 
     async def _cmd_damagelink_group(self, group: str = ""):
         """Sets Damagelink group"""
-        if "_read_race_mode" in self.ctx.stored_data and self.ctx.stored_data["_read_race_mode"]:
-            self.output(f"Damage Link Group cannot be changed manually during a race!")
+        if self.ctx.stored_data.get("_read_race_mode"):
+            self.output("Damage Link Group cannot be changed manually during a race!")
             return
         if group != self.ctx.damage_link_group:
             await self.ctx.update_damage_link_group(group)
             if group == "":
-                self.output(f"Damage Link group changed to global default group")
+                self.output("Damage Link group changed to global default group")
             else:
                 self.output(f"Damage Link group changed to '{group}'")
         else:
             self.output(f"Already in Damage Link group '{group}'")
-    
+
     def _cmd_gamestatus(self):
         """Print information about the game's status"""
         game_process = "None"
@@ -151,11 +161,11 @@ class YohaneDeepblueCommandProcessor(ClientCommandProcessor):
         if self.ctx.connection_status == ConnectionStatus.CONNECTED:
             server_connection = "Connected"
         self.output(f"Game: {game_process}, Client connection: {game_connected}, Server: {server_connection}")
-    
+
     def _cmd_musicalscores(self):
         """Check how many musical scores are currently queued"""
         self.output(f"The client currently has {self.ctx.stored_musical_scores} Musical Score(s) stored.")
-    
+
     def _cmd_resync(self):
         """Force the client to resend every important item to the game."""
         self.ctx.highest_received_item_index = 0
@@ -226,10 +236,12 @@ class YohaneDeepblueContext(CommonContext):
     async def game_watcher(self):
         while not self.exit_event.is_set():
             if self.game_connected and self.connection_status == ConnectionStatus.CONNECTED:
-                if (self.deathlink_enabled and f"DeathLink{self.death_link_group}" not in self.tags) or (not self.deathlink_enabled and f"DeathLink{self.death_link_group}" in self.tags):
+                if ((self.deathlink_enabled and f"DeathLink{self.death_link_group}" not in self.tags) or
+                        (not self.deathlink_enabled and f"DeathLink{self.death_link_group}" in self.tags)):
                     await self.update_death_link_group(self.death_link_group)
                     await self.update_death_link(self.deathlink_enabled)
-                if (self.damagelink_enabled and f"SharedDamage{self.damage_link_group}" not in self.tags) or (not self.damagelink_enabled and f"SharedDamage{self.damage_link_group}" in self.tags):
+                if ((self.damagelink_enabled and f"SharedDamage{self.damage_link_group}" not in self.tags) or
+                        (not self.damagelink_enabled and f"SharedDamage{self.damage_link_group}" in self.tags)):
                     await self.update_damage_link_group(self.damage_link_group)
                     await self.update_damage_link(self.damagelink_enabled)
                 if self.game_process is None:
@@ -256,37 +268,40 @@ class YohaneDeepblueContext(CommonContext):
                         elif is_dead and self.can_send_deathlink:
                             await self.send_death()
                             self.can_send_deathlink = False
-                    
+
                     if self.kernel32 is None:
                         self.kernel32 = pymem.process.module_from_name(self.game_process.process_handle, "kernel32.dll")
                     if self.kernel32 is not None:
                         try:
                             main_thread = self.game_process.main_thread
-                            for i in range(main_thread._query_teb().NtTib.StackBase - 8, main_thread._query_teb().NtTib.StackLimit, -8):
+                            for i in range(main_thread._query_teb().NtTib.StackBase - 8,
+                                           main_thread._query_teb().NtTib.StackLimit, -8):
                                 try:
                                     value = int(self.game_process.read_ulonglong(i))
-                                    if value > self.kernel32.lpBaseOfDll and value < self.kernel32.lpBaseOfDll + self.kernel32.SizeOfImage:
+                                    if (value > self.kernel32.lpBaseOfDll and
+                                            value < self.kernel32.lpBaseOfDll + self.kernel32.SizeOfImage):
                                         self.threadstack0 = i
                                         break
-                                except Exception as e:
+                                except Exception:
                                     pass
                             if self.threadstack0 >= 0:
                                 self.yohane_pointer = _resolve_pointer(self, self.threadstack0, YOHANE_PTR)
-                        except Exception as e:
+                        except Exception:
                             #logger.info(e)
                             pass
                     if self.yohane_pointer >= 0:
                         try:
                             health = int(self.game_process.read_ulong(self.yohane_pointer + CURRENT_HP_OFFSET))
                             max_health = int(self.game_process.read_ulong(self.yohane_pointer + MAX_HP_OFFSET))
-                            if health < self.last_health and max_health == self.last_max_health and self.can_send_damagelink:
+                            if (health < self.last_health and max_health == self.last_max_health and 
+                                    self.can_send_damagelink):
                                 await self.send_damage(self.last_health - health)
                                 self.can_send_damagelink = False
                             else:
                                 self.can_send_damagelink = True
                             self.last_health = health
                             self.last_max_health = max_health
-                        except:
+                        except Exception:
                             pass
 
                     main_struct = self.get_base_address(MAIN_BASE_OFFSET)
@@ -294,7 +309,7 @@ class YohaneDeepblueContext(CommonContext):
                         logger.info("ERROR: Couldn't find main data struct!")
                         await asyncio.sleep(1)
                         continue
-                    
+
                     map_area = self.game_process.read_uchar(main_struct + MAP_AREA_OFFSET)
                     map_room = self.game_process.read_uchar(main_struct + MAP_ROOM_OFFSET)
                     if self.last_map_area != map_area or self.last_map_room != map_room:
@@ -317,14 +332,14 @@ class YohaneDeepblueContext(CommonContext):
                         if in_parlor:
                             logger.info("Yohane safely arrived in her Fortune Parlor")
                         self.in_parlor = in_parlor
-                    
+
                     dungeon_flags = int(self.game_process.read_uchar(main_struct + DUNGEON_FLAGS_OFFSET))
                     if self.slot_data["early_chika_blocks_moved"] == Toggle.option_true and dungeon_flags & 0x2 == 0:
                         if self.debug_log:
                             logger.info("Setting Chika Block flags")
                         dungeon_flags |= 0x2
                         self.game_process.write_uchar(main_struct + DUNGEON_FLAGS_OFFSET, dungeon_flags)
-                    
+
                     game_progression_flags = int(self.game_process.read_ushort(main_struct + GAME_PROGRESSION_FLAGS_OFFSET))
                     for location in DataMaps.character_rescue_flag_map:
                         if location_table[location] in self.checked_locations:
@@ -332,11 +347,12 @@ class YohaneDeepblueContext(CommonContext):
                         elif game_progression_flags & DataMaps.character_rescue_flag_map[location] != 0:
                             self.queued_locations.append(location_table[location])
                     game_progression_flags &= 0x7FFF
-                    if map_area == 1 and map_room in [9, 10] and ItemNames.boss_token in self.local_received_items and self.local_received_items[ItemNames.boss_token] >= 8:
+                    if (map_area == 1 and map_room in [9, 10] and ItemNames.boss_token in self.local_received_items and
+                            self.local_received_items[ItemNames.boss_token] >= 8):
                         game_progression_flags |= 0x8000 # Spawns Infernal Altar cutscene
                     self.game_process.write_ushort(main_struct + GAME_PROGRESSION_FLAGS_OFFSET, game_progression_flags)
                     self.game_process.write_ushort(main_struct + GAME_FLAGS_OFFSET, game_flags)
-                    
+
                     character_quest_flags = int(self.game_process.read_uint(main_struct + CHARACTER_QUEST_FLAGS_OFFSET))
                     for location in DataMaps.character_quest_flag_map:
                         if location_table[location] in self.checked_locations:
@@ -348,10 +364,14 @@ class YohaneDeepblueContext(CommonContext):
                                 await self.send_msgs([{"cmd": "CreateHints", "locations": [location_table[location]]}])
                             if UpgradeHints._option_ap in self.slot_data["upgrade_hints"]:
                                 item = DataMaps.chest_data_map[location].vanilla_item
-                                if not item in self.local_received_items:
+                                if item not in self.local_received_items:
                                     real_location = self.slot_data["upgrades"][item_table[item].code - 1]
                                     if real_location[1] is not None:
-                                        await self.send_msgs([{"cmd": "CreateHints", "player": real_location[0], "locations": [real_location[1]]}])
+                                        await self.send_msgs([{
+                                            "cmd": "CreateHints",
+                                            "player": real_location[0],
+                                            "locations": [real_location[1]]
+                                        }])
                     character_quest_flags &= 0xDB6DB6FF # Disable collection flags
 
                     boss_defeated_flags = int(self.game_process.read_uint(main_struct + BOSS_DEFEATED_FLAGS))
@@ -382,7 +402,9 @@ class YohaneDeepblueContext(CommonContext):
                         if item_data.code is not None: # events aren't real
                             offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item_data.code)
                             room = DataMaps.character_upgrade_to_area_room[item]
-                            if item in self.local_received_items and (not (room[0] == map_area and map_room in room[1]) or location_table[room[2]] in self.checked_locations):
+                            if (item in self.local_received_items and
+                                (not (room[0] == map_area and map_room in room[1]) or
+                                    location_table[room[2]] in self.checked_locations)):
                                 self.game_process.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 1)
                             else:
                                 self.game_process.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 0)
@@ -391,17 +413,18 @@ class YohaneDeepblueContext(CommonContext):
                         item_data = unique_accessories_table[item]
                         if item_data.code is not None: # events aren't real
                             offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item_data.code)
+                            addr = main_struct + offset + ITEM_COUNT_OFFSET
                             if item in self.local_received_items:
-                                self.game_process.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 1)
+                                self.game_process.write_uchar(addr, 1)
                                 if item == ItemNames.extra_accessory_slot:
                                     if self.local_received_items[item] > 1:
-                                        self.game_process.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET + ITEM_STRUCT_SIZE, 1)
+                                        self.game_process.write_uchar(addr + ITEM_STRUCT_SIZE, 1)
                                     else:
-                                        self.game_process.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET + ITEM_STRUCT_SIZE, 0)
+                                        self.game_process.write_uchar(addr + ITEM_STRUCT_SIZE, 0)
                             else:
-                                self.game_process.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 0)
+                                self.game_process.write_uchar(addr, 0)
                                 if item == ItemNames.extra_accessory_slot:
-                                    self.game_process.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET + ITEM_STRUCT_SIZE, 0)
+                                    self.game_process.write_uchar(addr + ITEM_STRUCT_SIZE, 0)
 
                     cache: dict[int, int] = {}
                     for location in DataMaps.chest_data_map.keys():
@@ -424,22 +447,26 @@ class YohaneDeepblueContext(CommonContext):
                                     item_count -= 1
                                 self.game_process.write_uchar(main_struct + item_offset + ITEM_COUNT_OFFSET, item_count)
                                 self.game_process.write_ushort(main_struct + item_offset, item_count << 8 + item_count)
-                        if location in [LocationNames.sandy_trap_room_chest, LocationNames.soarshoes_room_chest, LocationNames.gloves_of_might_room_chest]:
-                            accessories_enabled = int(self.game_process.read_uchar(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET))
+                        if location in DataMaps.important_item_chests:
+                            addr = main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET
+                            accessories_enabled = int(self.game_process.read_uchar(addr))
                             accessories_enabled &= (0xF8 | self.local_accessories_enabled)
-                            self.game_process.write_uchar(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET, accessories_enabled)
+                            self.game_process.write_uchar(addr, accessories_enabled)
 
                     while self.queued_locations:
                         location = self.queued_locations.pop(0)
                         self.locations_checked.add(location)
                         await self.check_locations({location})
-                    
-                    self.stored_musical_scores = int(self.game_process.read_uchar(main_struct + STORED_MUSICAL_SCORE_COUNTER_OFFSET + ITEM_COUNT_OFFSET))
-                    musical_scores = int(self.game_process.read_uchar(main_struct + MUSICAL_SCORES_INVENTORY_OFFSET + ITEM_COUNT_OFFSET))
+
+                    stored_musical_scores_addr = main_struct + STORED_MUSICAL_SCORE_COUNTER_OFFSET + ITEM_COUNT_OFFSET
+                    self.stored_musical_scores = int(self.game_process.read_uchar(stored_musical_scores_addr))
+                    inventory_musical_score_addr = main_struct + MUSICAL_SCORES_INVENTORY_OFFSET + ITEM_COUNT_OFFSET
+                    musical_scores = int(self.game_process.read_uchar(inventory_musical_score_addr))
                     if musical_scores == 0 and self.stored_musical_scores > 0:
-                        self.game_process.write_uchar(main_struct + MUSICAL_SCORES_INVENTORY_OFFSET + ITEM_COUNT_OFFSET, 1)
+                        self.game_process.write_uchar(inventory_musical_score_addr, 1)
                         self.stored_musical_scores -= 1
-                    self.highest_processed_item_index = int(self.game_process.read_uint(main_struct + RECEIVED_ITEMS_COUNTER_OFFSET + ITEM_COUNT_OFFSET))
+                    received_items_addr = main_struct + RECEIVED_ITEMS_COUNTER_OFFSET + ITEM_COUNT_OFFSET
+                    self.highest_processed_item_index = int(self.game_process.read_uint(received_items_addr))
 
                     new_items = self.items_received[self.highest_received_item_index :]
                     for item in new_items:
@@ -449,7 +476,7 @@ class YohaneDeepblueContext(CommonContext):
                         self.highest_received_item_index += 1
 
                         item_name = item_id_to_name[item.item]
-                        if not item_name in self.local_received_items.keys():
+                        if item_name not in self.local_received_items.keys():
                             self.local_received_items[item_name] = 1
                         else:
                             self.local_received_items[item_name] += 1
@@ -479,11 +506,11 @@ class YohaneDeepblueContext(CommonContext):
                                     case ItemNames.big_yen:
                                         amount = 50000
                                     case _:
-                                        raise ValueError("Unknown yen item '%s' received!".format(item_name))
+                                        raise ValueError(f"Unknown yen item '{item_name}' received!")
                                 yen = int(self.game_process.read_uint(main_struct + YEN_OFFSET))
                                 yen += amount
                                 self.game_process.write_uint(main_struct + YEN_OFFSET, yen)
-                        
+
                         if item_name in equips_set:
                             offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item.item)
                             value = int(self.game_process.read_uchar(main_struct + offset + ITEM_COUNT_OFFSET)) + 1
@@ -562,7 +589,7 @@ class YohaneDeepblueContext(CommonContext):
                         if self.game_process is not None:
                             self.game_connected = True
                             logger.info("Reconnected!")
-                    except Exception as e:
+                    except Exception:
                         await asyncio.sleep(1)
                 pass
             else:
@@ -597,7 +624,7 @@ class YohaneDeepblueContext(CommonContext):
             # we can skip checking "SharedDamage" in ctx.tags, as otherwise we wouldn't have been send this
             if f"SharedDamage{self.damage_link_group}" in tags and self.last_damage_link != args["data"]["time"]:
                 self.on_damagelink(args["data"])
-    
+
     async def send_death(self, death_text: str = ""):
         """Helper function to send a deathlink using death_text as the unique death cause string."""
         if self.server and self.server.socket:
@@ -611,7 +638,7 @@ class YohaneDeepblueContext(CommonContext):
                     "cause": death_text
                 }
             }])
-    
+
     async def update_death_link(self, death_link: bool):
         """Helper function to set Death Link connection tag on/off and update the connection if already connected."""
         old_tags = self.tags.copy()
@@ -632,8 +659,8 @@ class YohaneDeepblueContext(CommonContext):
             self.tags.add(f"DeathLink{self.death_link_group}")
             if self.server and not self.server.socket.closed:
                 await self.send_msgs([{"cmd": "ConnectUpdate", "tags": self.tags}])
-    
-    def on_deathlink(self, data: Dict[str, Any]) -> None:
+
+    def on_deathlink(self, data: dict[str, Any]) -> None:
         if self.game_process is not None:
             text = data.get("cause", "") # for ingame display
             flags_struct = _resolve_pointer(self, self.get_base_address(FLAGS_STRUCT_BASE_OFFSET), PTR_FLAGS_STRUCT)
@@ -641,7 +668,7 @@ class YohaneDeepblueContext(CommonContext):
             self.game_process.write_uchar(flags_struct + OFFSET_AREA_RELOAD, 1)
             self.can_send_deathlink = False
         return super().on_deathlink(data)
-    
+
     async def send_damage(self, damage: int, damage_text: str = ""):
         """Helper function to send a damagelink using damage_text as the unique damage cause string."""
         if self.server and self.server.socket:
@@ -657,7 +684,7 @@ class YohaneDeepblueContext(CommonContext):
                     "cause": damage_text
                 },
             }])
-    
+
     async def update_damage_link(self, damage_link: bool):
         """Helper function to set Damage Link connection tag on/off and update the connection if already connected."""
         old_tags = self.tags.copy()
@@ -678,8 +705,8 @@ class YohaneDeepblueContext(CommonContext):
             self.tags.add(f"SharedDamage{self.damage_link_group}")
             if self.server and not self.server.socket.closed:
                 await self.send_msgs([{"cmd": "ConnectUpdate", "tags": self.tags}])
-    
-    def on_damagelink(self, data: Dict[str, Any]) -> None:
+
+    def on_damagelink(self, data: dict[str, Any]) -> None:
         if self.game_process is not None:
             text = data.get("cause", "") # for ingame display
             damage = data.get("damage_points", 0)
@@ -715,7 +742,7 @@ class YohaneDeepblueContext(CommonContext):
 
         self.ui = YohaneDeepblueManager(self)
         self.ui_task = asyncio.create_task(self.ui.async_run(), name="UI")
-    
+
     def connect_to_game(self) -> None:
         try:
             self.game_process = PymemEX(process_name="game.exe", exact_match=True)
@@ -745,7 +772,7 @@ def launch_client(*args: Sequence[str]) -> None:
 
     asyncio.run(main(launch_args))
     colorama.deinit()
-    
+
 
 async def main(args: Namespace) -> None:
     ctx = YohaneDeepblueContext(args.connect, args.password)
@@ -772,6 +799,6 @@ def _resolve_pointer(ctx: YohaneDeepblueContext, base_address: int, pointer: lis
     for offset in pointer:
         try:
             address = _read_address(ctx, address + offset)
-        except Exception as e:
+        except Exception:
             return -1
     return address

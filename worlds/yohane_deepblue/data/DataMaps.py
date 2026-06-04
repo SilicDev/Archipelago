@@ -45,7 +45,7 @@ chest_data_map = {
     LocationNames.postal_guild_bag_room: ChestData(0x512BB, 0x40, ItemNames.you_upgrade),
 
     LocationNames.soarshoesnt_chest_room_chest: ChestData(0x512AB, 0x80, ItemNames.magicolight),
-    LocationNames.annoying_teleporting_fish_room_chest: ChestData(0x512F8, 0x10, ItemNames.lady_of_the_lakes_bromide), 
+    LocationNames.annoying_teleporting_fish_room_chest: ChestData(0x512F8, 0x10, ItemNames.lady_of_the_lakes_bromide),
     LocationNames.wallcrab_chest_room_chest: ChestData(0x512F8, 0x08, ItemNames.sardine_oil),
     LocationNames.dumb_block_room_chest: ChestData(0x512F8, 0x01, ItemNames.charge_stone),
     LocationNames.lost_monstie_room_chest: ChestData(0x512AB, 0x20, ItemNames.mari_upgrade),
@@ -64,6 +64,12 @@ chest_data_map = {
 
     LocationNames.purple_goo_room_chest: ChestData(0x512BF, 0x40, ItemNames.lady_of_the_lakes_fin),
     LocationNames.dark_room_chest: ChestData(0x512BF, 0x20, ItemNames.numazu_star),
+}
+
+important_item_chests = {
+    LocationNames.sandy_trap_room_chest,
+    LocationNames.soarshoes_room_chest,
+    LocationNames.gloves_of_might_room_chest
 }
 
 character_rescue_flag_map = {
@@ -133,7 +139,7 @@ character_item_flags_map = {
     #ItemNames.ruby_upgrade: 0x400000,
 }
 
-character_to_upgrade_map: dict[str, typing.Optional[str]] = {
+character_to_upgrade_map: dict[str, str | None] = {
     ItemNames.lailaps_unlock: None,
     ItemNames.chika_unlock: ItemNames.chika_upgrade,
     ItemNames.riko_unlock: ItemNames.riko_upgrade,
@@ -145,7 +151,8 @@ character_to_upgrade_map: dict[str, typing.Optional[str]] = {
     ItemNames.ruby_unlock: ItemNames.ruby_upgrade,
 }
 
-upgrade_to_character_map = {upgrade: character for character, upgrade in character_to_upgrade_map.items() if upgrade is not None}
+upgrade_to_character_map = {upgrade: character for character, upgrade in character_to_upgrade_map.items()
+                            if upgrade is not None}
 
 upgrade_item_to_quest_location_map = {
     ItemNames.chika_upgrade: LocationNames.chika_upgrade_quest,

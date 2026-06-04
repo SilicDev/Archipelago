@@ -1,10 +1,8 @@
-import typing
-
-from Options import Toggle
 from BaseClasses import Location
 from worlds.AutoWorld import World
 
 from .data import LocationNames
+
 
 class YohaneDeepblueLocation(Location):
     game: str = "YOHANE THE PARHELION -BLAZE in the DEEPBLUE-"
@@ -143,7 +141,7 @@ sunken_temple_main_region_locations = {
 
     LocationNames.pathway_to_infernal_altar_chest,
     LocationNames.katys_mask_room_chest,
-    
+
     LocationNames.chika_rescue,
 }
 
@@ -171,7 +169,7 @@ ruins_post_boss_2_region_locations = {
 
 ruins_boss_3_region_locations = {
     LocationNames.ruins_boss_defeated_3,
-    
+
     LocationNames.kanan_rescue,
 }
 
@@ -203,7 +201,7 @@ grotto_boss_region_locations = {
 
     LocationNames.isolated_climb_room_chest,
     LocationNames.small_cave_climb_room_chest,
-    
+
     LocationNames.dia_rescue,
 }
 
@@ -289,7 +287,7 @@ sea_of_trees_right_region_locations = {
 
 sea_of_trees_boss_region_locations = {
     LocationNames.sea_of_trees_boss_defeated,
-    
+
     LocationNames.you_rescue,
 }
 
@@ -412,7 +410,7 @@ shipwreck_top_entrance_region_locations = set()
 
 shipwreck_boss_region_locations = {
     LocationNames.shipwreck_boss_defeated,
-    
+
     LocationNames.hanamaru_rescue,
 }
 
@@ -440,7 +438,7 @@ aqours_memoria_region_locations = {
     LocationNames.infernal_altar_boss_refight,
 }
 
-location_table: dict[str, int] = {
+location_table: dict[str, int | None] = {
     **character_rescue_locations,
     **character_upgrade_locations,
     **boss_fight_locations,
@@ -457,39 +455,58 @@ def setup_locations(world: World, player: int):
     locations.update({**chest_locations})
     return locations
 
-lookup_id_to_name: dict[int, str] = {idx: name for name, idx in location_table.items()}
+lookup_id_to_name: dict[int, str] = {idx: name for name, idx in location_table.items() if idx is not None}
 
 location_groups: dict[str, set[str]] = {
-    "Bosses": set({boss for boss in (boss_fight_locations.keys() | boss_refight_locations.keys()) if location_table[boss] is not None}),
+    "Bosses": set({boss for boss in (boss_fight_locations.keys() | boss_refight_locations.keys())
+                   if location_table[boss] is not None}),
     "Chests": set(chest_locations.keys()),
     "Rescues": set(character_rescue_locations.keys()),
     "Upgrade Quests": set(character_upgrade_locations.keys()),
-    "Sunken Temple": sunken_temple_entrance_region_locations | sunken_temple_random_region_locations | sunken_temple_main_region_locations | sunken_temple_post_boss_region_locations,
-    "Grotto": grotto_main_region_locations | grotto_boss_region_locations | grotto_top_corridor_region_locations | grotto_top_region_locations | grotto_coral_hill_entrance_region_locations,
-    "Ruins": (ruins_grotto_entrance_region_locations | ruins_boss_1_region_locations | ruins_boss_2_region_locations | ruins_post_boss_2_region_locations | 
-              ruins_boss_3_region_locations | ruins_post_boss_3_region_locations | ruins_left_of_sandpit_region_locations),
-    "Sunken Volcano": sunken_volcano_left_region_locations | sunken_volcano_main_region_locations | sunken_volcano_boss_region_locations,
-    "Coral Hill": (coral_hill_left_entrance_region_locations | coral_hill_left_save_region_locations | coral_hill_top_left_region_locations |
-                   coral_hill_bottom_left_region_locations | coral_hill_left_climb_region_locations | coral_hill_random_save_region_locations |
-                   coral_hill_bottom_region_locations | coral_hill_random_region_locations | coral_hill_post_random_region_locations| 
-                   coral_hill_soarshoesnt_chest_region_locations | coral_hill_center_save_region_locations | coral_hill_teleporting_fish_chest_region_locations |
-                   coral_hill_climb_bottom_region_locations | coral_hill_teleporting_fish_room_region_locations | coral_hill_climb_top_region_locations |
-                   coral_hill_below_top_save_region_locations | coral_hill_top_save_region_locations | coral_hill_top_save_climb_region_locations |
-                   coral_hill_left_wall_crab_region_locations | coral_hill_wall_crab_chest_region_locations | coral_hill_right_wall_crab_region_locations |
-                   coral_hill_boss_region_locations | coral_hill_spawner_trident_region_locations | coral_hill_right_entrance_region_locations |
+    "Sunken Temple": (sunken_temple_entrance_region_locations | sunken_temple_random_region_locations |
+                      sunken_temple_main_region_locations | sunken_temple_post_boss_region_locations),
+    "Grotto": (grotto_main_region_locations | grotto_boss_region_locations | grotto_top_corridor_region_locations |
+               grotto_top_region_locations | grotto_coral_hill_entrance_region_locations),
+    "Ruins": (ruins_grotto_entrance_region_locations | ruins_boss_1_region_locations | ruins_boss_2_region_locations |
+              ruins_post_boss_2_region_locations | ruins_boss_3_region_locations | ruins_post_boss_3_region_locations |
+              ruins_left_of_sandpit_region_locations),
+    "Sunken Volcano": (sunken_volcano_left_region_locations | sunken_volcano_main_region_locations |
+                       sunken_volcano_boss_region_locations),
+    "Coral Hill": (coral_hill_left_entrance_region_locations | coral_hill_left_save_region_locations |
+                   coral_hill_top_left_region_locations | coral_hill_bottom_left_region_locations |
+                   coral_hill_left_climb_region_locations | coral_hill_random_save_region_locations |
+                   coral_hill_bottom_region_locations | coral_hill_random_region_locations |
+                   coral_hill_post_random_region_locations | coral_hill_soarshoesnt_chest_region_locations |
+                   coral_hill_center_save_region_locations | coral_hill_teleporting_fish_chest_region_locations |
+                   coral_hill_climb_bottom_region_locations | coral_hill_teleporting_fish_room_region_locations |
+                   coral_hill_climb_top_region_locations | coral_hill_below_top_save_region_locations |
+                   coral_hill_top_save_region_locations | coral_hill_top_save_climb_region_locations |
+                   coral_hill_left_wall_crab_region_locations | coral_hill_wall_crab_chest_region_locations |
+                   coral_hill_right_wall_crab_region_locations | coral_hill_boss_region_locations |
+                   coral_hill_spawner_trident_region_locations | coral_hill_right_entrance_region_locations |
                    coral_hill_bottom_entrance_region_locations),
-    "Crystalline Grotto": (crystalline_grotto_entrance_region_locations | crystalline_grotto_left_save_region_locations | crystalline_grotto_top_left_save_region_locations |
-                           crystalline_grotto_top_region_locations | crystalline_grotto_top_save_region_locations | crystalline_grotto_random_region_locations |
-                           crystalline_grotto_right_save_region_locations | crystalline_grotto_bottom_region_locations | crystalline_grotto_post_boss_region_locations |
-                           crystalline_grotto_center_region_locations | crystalline_grotto_center_save_region_locations | crystalline_grotto_left_center_save_region_locations |
+    "Crystalline Grotto": (crystalline_grotto_entrance_region_locations |
+                           crystalline_grotto_left_save_region_locations |
+                           crystalline_grotto_top_left_save_region_locations |
+                           crystalline_grotto_top_region_locations | crystalline_grotto_top_save_region_locations |
+                           crystalline_grotto_random_region_locations | crystalline_grotto_right_save_region_locations |
+                           crystalline_grotto_bottom_region_locations | crystalline_grotto_post_boss_region_locations |
+                           crystalline_grotto_center_region_locations |
+                           crystalline_grotto_center_save_region_locations |
+                           crystalline_grotto_left_center_save_region_locations |
                            crystalline_grotto_mari_chest_region_locations | crystalline_grotto_boss_region_locations),
-    "Shipwreck": (shipwreck_left_region_locations | shipwreck_left_mast_region_locations | shipwreck_main_region_locations | shipwreck_bottom_region_locations |
-                  shipwreck_sealed_off_chest_region_locations | shipwreck_postal_guild_bag_region_locations | shipwreck_post_postal_guild_bag_region_locations |
-                  shipwreck_gloves_region_locations | shipwreck_top_gloves_region_locations | shipwreck_right_mast_region_locations | shipwreck_top_entrance_region_locations |
-                  shipwreck_boss_region_locations | shipwreck_right_entrance_region_locations),
-    "Sea of Trees": (sea_of_trees_main_region_locations | sea_of_trees_random_region_locations | sea_of_trees_right_region_locations | sea_of_trees_top_left_region_locations |
-                     sea_of_trees_boss_region_locations | sea_of_trees_post_boss_region_locations | sea_of_trees_center_save_region_locations | 
-                     sea_of_trees_center_chika_region_locations | sea_of_trees_long_slide_region_locations),
+    "Shipwreck": (shipwreck_left_region_locations | shipwreck_left_mast_region_locations |
+                  shipwreck_main_region_locations | shipwreck_bottom_region_locations |
+                  shipwreck_sealed_off_chest_region_locations | shipwreck_postal_guild_bag_region_locations |
+                  shipwreck_post_postal_guild_bag_region_locations | shipwreck_gloves_region_locations |
+                  shipwreck_top_gloves_region_locations | shipwreck_right_mast_region_locations |
+                  shipwreck_top_entrance_region_locations | shipwreck_boss_region_locations |
+                  shipwreck_right_entrance_region_locations),
+    "Sea of Trees": (sea_of_trees_main_region_locations | sea_of_trees_random_region_locations |
+                     sea_of_trees_right_region_locations | sea_of_trees_top_left_region_locations |
+                     sea_of_trees_boss_region_locations | sea_of_trees_post_boss_region_locations |
+                     sea_of_trees_center_save_region_locations | sea_of_trees_center_chika_region_locations |
+                     sea_of_trees_long_slide_region_locations),
     "Infernal Altar": infernal_altar_region_locations,
     "Aqours Memoria": {boss for boss in aqours_memoria_region_locations if location_table[boss] is not None},
 }

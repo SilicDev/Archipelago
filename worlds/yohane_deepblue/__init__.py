@@ -9,13 +9,25 @@ from rule_builder.cached_world import CachedRuleBuilderWorld
 from worlds.AutoWorld import WebWorld, World
 from worlds.LauncherComponents import Component, Type, components, launch
 
-from .items import (YohaneDeepblueItem, item_groups, item_table, junk_table, event_table, unique_accessories_table, character_unlock_table, 
-                    character_upgrade_table, rare_material_table, consumables_table, progressive_character_table)
-from .locations import YohaneDeepblueLocation, location_groups, location_table, setup_locations
-from .regions import create_regions, connect_regions
-from .rules import set_rules
-from .options import YohaneDeepblueOptions, yohane_deepblue_option_groups
 from .data import ItemNames, LocationNames
+from .items import (
+    YohaneDeepblueItem,
+    character_unlock_table,
+    character_upgrade_table,
+    consumables_table,
+    event_table,
+    item_groups,
+    item_table,
+    junk_table,
+    progressive_character_table,
+    rare_material_table,
+    unique_accessories_table,
+)
+from .locations import YohaneDeepblueLocation, location_groups, location_table, setup_locations
+from .options import YohaneDeepblueOptions, yohane_deepblue_option_groups
+from .regions import connect_regions, create_regions
+from .rules import set_rules
+
 
 def run_client(*args: str) -> None:
     from .client import launch_client
@@ -59,7 +71,7 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
     options_dataclass = YohaneDeepblueOptions
     options: YohaneDeepblueOptions
 
-    item_name_to_id = {name: data.code for name, data in item_table.items()}
+    item_name_to_id = {name: data.code for name, data in item_table.items() if data.code}
     location_name_to_id = location_table
     item_name_groups = item_groups
     location_name_groups = location_groups
@@ -74,35 +86,30 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
         connect_regions(self)
 
     def create_items(self) -> None:
-        self.multiworld.push_precollected(self.create_item(ItemNames.katar))
-        self.multiworld.push_precollected(self.create_item(ItemNames.lailaps_unlock))
-        self.multiworld.get_location(LocationNames.sunken_temple_boss_defeated, self.player).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.multiworld.get_location(LocationNames.ruins_boss_defeated_3, self.player).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.multiworld.get_location(LocationNames.grotto_boss_defeated, self.player).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.multiworld.get_location(LocationNames.coral_hill_boss_defeated, self.player).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.multiworld.get_location(LocationNames.sea_of_trees_boss_defeated, self.player).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.multiworld.get_location(LocationNames.crystalline_grotto_boss_defeated, self.player).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.multiworld.get_location(LocationNames.sunken_volcano_boss_defeated, self.player).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.multiworld.get_location(LocationNames.shipwreck_boss_defeated, self.player).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.multiworld.get_location(LocationNames.aquors_memoria_boss_defeated, self.player).place_locked_item(self.create_item(ItemNames.victory))
+        self.push_precollected(self.create_item(ItemNames.katar))
+        self.push_precollected(self.create_item(ItemNames.lailaps_unlock))
+        self.get_location(LocationNames.sunken_temple_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+        self.get_location(LocationNames.ruins_boss_defeated_3).place_locked_item(self.create_item(ItemNames.boss_token))
+        self.get_location(LocationNames.grotto_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+        self.get_location(LocationNames.coral_hill_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+        self.get_location(LocationNames.sea_of_trees_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+        self.get_location(LocationNames.crystalline_grotto_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+        self.get_location(LocationNames.sunken_volcano_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+        self.get_location(LocationNames.shipwreck_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+        self.get_location(LocationNames.aquors_memoria_boss_defeated).place_locked_item(self.create_item(ItemNames.victory))
         num_locations_to_fill = len(self.multiworld.get_unfilled_locations(self.player))
         itempool: list[Item] = []
-        for item in unique_accessories_table.keys():
-            for _ in range(unique_accessories_table[item].quantity):
-                itempool.append(self.create_item(item))
-        for item in rare_material_table.keys():
-            for _ in range(rare_material_table[item].quantity):
-                itempool.append(self.create_item(item))
+        itempool.extend([self.create_item(item) for item in unique_accessories_table
+                         for _ in range(unique_accessories_table[item].quantity)])
+        itempool.extend([self.create_item(item) for item in rare_material_table
+                         for _ in range(rare_material_table[item].quantity)])
         if self.options.progressive_character_unlocks == Toggle.option_true:
-            for item in progressive_character_table.keys():
-                itempool.append(self.create_item(item))
-                itempool.append(self.create_item(item))
+            itempool.extend([self.create_item(item) for item in progressive_character_table
+                            for _ in range(2)])
         else:
-            for item in character_unlock_table.keys():
-                if item != ItemNames.lailaps_unlock:
-                    itempool.append(self.create_item(item))
-            for item in character_upgrade_table.keys():
-                itempool.append(self.create_item(item))
+            itempool.extend(self.create_item(item) for item in character_unlock_table
+                            if item != ItemNames.lailaps_unlock)
+            itempool.extend(self.create_item(item) for item in character_upgrade_table)
         surplus_checks = num_locations_to_fill - len(itempool)
         itempool += [self.create_filler() for _ in range(surplus_checks)]
         self.multiworld.itempool += itempool
@@ -120,17 +127,16 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
             classification = ItemClassification.trap
         elif name in rare_material_table.keys():
             classification = ItemClassification.useful
-        item = YohaneDeepblueItem(name, classification, data.code, self.player)
-        return item
+        return YohaneDeepblueItem(name, classification, data.code, self.player)
 
     def set_rules(self) -> None:
         set_rules(self)
         self.multiworld.completion_condition[self.player] = lambda state: state.has(ItemNames.victory, self.player)
-    
+
     def get_filler_item_name(self) -> str:
         junk_items = sorted(junk_table)
         return self.multiworld.random.choice(junk_items)
-    
+
     def fill_slot_data(self) -> dict[str, typing.Any]:
         slot_data = self.options.as_dict(
             "death_link",

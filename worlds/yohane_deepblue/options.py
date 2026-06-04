@@ -3,8 +3,20 @@ Option definitions for YOHANE THE PARHELION -BLAZE in the DEEPBLUE-
 """
 from dataclasses import dataclass
 
-from Options import (Choice, DeathLinkMixin, DefaultOnToggle, OptionSet, NamedRange, Range, Toggle, FreeText,
-                     PerGameCommonOptions, OptionGroup, StartInventory, StartInventoryPool, OptionList)
+from Options import (
+    Choice,
+    DeathLinkMixin,
+    DefaultOnToggle,
+    FreeText,
+    NamedRange,
+    OptionGroup,
+    OptionList,
+    OptionSet,
+    PerGameCommonOptions,
+    Range,
+    StartInventoryPool,
+    Toggle,
+)
 
 
 class LogicDifficulty(Choice):
@@ -36,7 +48,7 @@ class EnableYouSkips(DefaultOnToggle):
 class ProgressiveCharacterUnlocks(Toggle):
     """
     If `true` places progressive unlocks for characters and upgrades instead of individual ones.
-    
+
     Example: Two items "Progressive Chika" instead of "Chika" and "Katy's Mask"
     """
     display_name = "Progressive Character Unlocks"
@@ -52,7 +64,7 @@ class UpgradeHints(OptionSet):
     display_name = "Upgrade Hints"
     valid_keys = frozenset({"Vanilla", "AP"})
     default = frozenset({"Vanilla"})
-    
+
     _option_vanilla = "Vanilla"
     _option_ap = "AP"
 
@@ -98,7 +110,7 @@ class DamageLinkMixin:
 @dataclass
 class DamageLinkGroupMixin(DamageLinkMixin):
     damage_link_group: DamageLinkGroup
-    
+
 
 @dataclass
 class YohaneDeepblueOptions(PerGameCommonOptions, DeathLinkGroupMixin, DamageLinkGroupMixin):

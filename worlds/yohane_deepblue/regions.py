@@ -1,14 +1,16 @@
+from collections.abc import Callable
 from enum import IntEnum
-import typing
 
-from BaseClasses import CollectionState, Region, Entrance, EntranceType, ItemClassification
-from rule_builder.rules import *
-from worlds.AutoWorld import World
+from BaseClasses import CollectionState, Entrance, EntranceType, ItemClassification, Region
 from Options import Toggle
-from .locations import *
+from rule_builder.rules import CanReachLocation, CanReachRegion, Filtered, Has, Rule
+from worlds.AutoWorld import World
+
+from .data import DataMaps, ItemNames, LocationNames
 from .items import YohaneDeepblueItem
-from .data import LocationNames, ItemNames, DataMaps
+from .locations import *
 from .rules import *
+
 
 def create_regions(world: World, active_locations: dict[str, int]) -> None:
     menu_region = create_region(world, world.origin_region_name, active_locations, menu_region_locations)
@@ -112,7 +114,8 @@ def create_regions(world: World, active_locations: dict[str, int]) -> None:
     if world.options.progressive_character_unlocks == Toggle.option_true:
         for item in DataMaps.character_item_to_progressive_map.keys():
             progressive = DataMaps.character_item_to_progressive_map[item]
-            menu_region.add_event(item, item, Has(progressive[0], progressive[1]), YohaneDeepblueLocation, YohaneDeepblueItem, False)
+            menu_region.add_event(item, item, Has(progressive[0], progressive[1]),
+                                  YohaneDeepblueLocation, YohaneDeepblueItem, False)
 
     world.multiworld.regions += [
         menu_region,
@@ -226,7 +229,7 @@ def connect_regions(world: World) -> None:
 
     connect(world, LocationNames.sunken_temple_main_region, LocationNames.sunken_temple_post_boss_region, 
             Filtered(chika_block_rule, options=chika_blocks_filter, filtered_resolution=True), True)
-    
+
     connect(world, LocationNames.sunken_temple_main_region, LocationNames.infernal_altar_region, boss_token_rule)
 
     connect(world, LocationNames.sunken_temple_post_boss_region, LocationNames.grotto_main_region, None)
@@ -462,11 +465,11 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.crystalline_grotto_top_region, LocationNames.crystalline_grotto_center_region, you_rule & riko_rule, True)
     connect(world, LocationNames.crystalline_grotto_center_region, LocationNames.crystalline_grotto_top_region, riko_rule, True)
 
-    connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_center_region, 
+    connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_center_region,
             chika_block_rule & CanReachRegion(LocationNames.crystalline_grotto_center_save_region), True)
-    connect(world, LocationNames.crystalline_grotto_center_region, LocationNames.crystalline_grotto_entrance_region, 
+    connect(world, LocationNames.crystalline_grotto_center_region, LocationNames.crystalline_grotto_entrance_region,
             upgraded_ruby_rule & CanReachRegion(LocationNames.crystalline_grotto_center_save_region), True)
-    
+
     connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_center_save_region, upgraded_ruby_rule)
 
     connect(world, LocationNames.crystalline_grotto_entrance_region, LocationNames.crystalline_grotto_left_center_save_region, you_skip_rule, True)
@@ -478,9 +481,9 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.crystalline_grotto_left_center_save_region, LocationNames.crystalline_grotto_post_boss_region, None, True)
     connect(world, LocationNames.crystalline_grotto_post_boss_region, LocationNames.crystalline_grotto_left_center_save_region, dia_rule | gloves_rule | soarshoes_rule, True)
 
-    connect(world, LocationNames.crystalline_grotto_center_save_region, LocationNames.crystalline_grotto_center_region, 
+    connect(world, LocationNames.crystalline_grotto_center_save_region, LocationNames.crystalline_grotto_center_region,
             upgraded_ruby_rule | gloves_rule | soarshoes_rule | (chika_rule & CanReachRegion(LocationNames.crystalline_grotto_entrance_region)), True)
-    
+
     connect(world, LocationNames.crystalline_grotto_center_region, LocationNames.crystalline_grotto_top_save_region, gloves_rule, True)
     connect(world, LocationNames.crystalline_grotto_top_save_region, LocationNames.crystalline_grotto_center_region, None, True)
 
@@ -536,7 +539,8 @@ def connect_regions(world: World) -> None:
 
 
     # Infernal Altar
-    connect(world, LocationNames.infernal_altar_region, LocationNames.aqours_memoria_region, CanReachLocation(LocationNames.infernal_altar_boss_defeated))
+    connect(world, LocationNames.infernal_altar_region, LocationNames.aqours_memoria_region, 
+            CanReachLocation(LocationNames.infernal_altar_boss_defeated))
     pass
 
 def create_region(world: World, name: str, active_locations: dict[str, int], location_set: set[str]) -> Region:
@@ -547,7 +551,8 @@ def create_region(world: World, name: str, active_locations: dict[str, int], loc
             region.locations.append(YohaneDeepblueLocation(world.player, location, code, region))
     return region
 
-def connect(world: World, source: str, destination: str, rule: typing.Optional[Rule | typing.Callable[[CollectionState],bool]], one_way: bool = False, randomization_group: int = 0) -> None:
+def connect(world: World, source: str, destination: str, rule: Rule | Callable[[CollectionState], bool] | None,
+            one_way: bool = False, randomization_group: int = 0) -> None:
     source_region = world.multiworld.get_region(source, world.player)
     dest_region = world.multiworld.get_region(destination, world.player)
 
@@ -558,11 +563,11 @@ def connect(world: World, source: str, destination: str, rule: typing.Optional[R
     else:
         randomization_type = EntranceType.TWO_WAY
         entrance_name += " <-> "
-    entrance_name += destination 
+    entrance_name += destination
     entrance = Entrance(world.player, entrance_name, source_region, randomization_group, randomization_type)
 
     if rule is not None:
         world.set_rule(entrance, rule)
-    
+
     source_region.exits.append(entrance)
     entrance.connect(dest_region)

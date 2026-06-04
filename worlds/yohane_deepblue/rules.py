@@ -1,10 +1,8 @@
-from worlds.generic.Rules import add_rule, set_rule, forbid_item, add_item_rule
+from rule_builder.rules import CanReachLocation, Filtered, Has, HasAny, OptionFilter
 from worlds.AutoWorld import World
-from rule_builder.rules import *
-from .options import EnableYouSkips, EarlyChikaBlockMoved
 
-from .data import LocationNames, ItemNames
-
+from .data import ItemNames, LocationNames
+from .options import EarlyChikaBlockMoved, EnableYouSkips
 
 you_enabled_filter = [OptionFilter(EnableYouSkips, EnableYouSkips.option_true)]
 chika_blocks_filter = [OptionFilter(EarlyChikaBlockMoved, EarlyChikaBlockMoved.option_false)]
@@ -89,7 +87,7 @@ def set_chest_rules(world: World) -> None:
     world.set_rule(world.get_location(LocationNames.final_guard_room_chest), you_rule)
     world.set_rule(world.get_location(LocationNames.gloves_of_might_room_chest), chika_rule | you_skip_rule)
     world.set_rule(world.get_location(LocationNames.postal_guild_bag_room), you_rule)
-    
+
     # Coral Hill
     world.set_rule(world.get_location(LocationNames.lost_monstie_room_chest), mari_rule & upgraded_ruby_rule)
 
