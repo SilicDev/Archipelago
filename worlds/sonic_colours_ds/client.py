@@ -156,6 +156,28 @@ class SonicColoursDSClient(BizHawkClient):
                 return # assume invalid
 
             location_prefix = DataMaps.level_id_to_location[level_id]
+
+            if area_id == 0 and counters < SCDS_RAM_START: # Planet Map
+                read_result = await bizhawk.guarded_read(
+                    ctx.bizhawk_ctx,
+                    [
+                        (SCDS_LEVEL_SELECT_TARGET, 2, "Main RAM")
+                    ],
+                    [guards["SONIC"], guards["AREA"]])
+                if read_result is not None:
+                    level_target = int.from_bytes(read_result[0], "little")
+                    if level_target < 7:
+                        if DataMaps.level_id_to_access_item[level_target] not in self.local_access_items:
+                            for i in range(7):
+                                if DataMaps.level_id_to_access_item[i] in self.local_access_items:
+                                    await bizhawk.guarded_write(
+                                        ctx.bizhawk_ctx,
+                                        [
+                                            (SCDS_LEVEL_SELECT_TARGET, i.to_bytes(2, "little"), "Main RAM"),
+                                            (SCDS_LEVEL_SELECT_PREVIEW, i.to_bytes(2, "little"), "Main RAM")
+                                    ], [guards["SONIC"], guards["AREA"]])
+                                    break
+
             await bizhawk.write(ctx.bizhawk_ctx, [(SCDS_AP_LEVEL_ID_TARGET, (self.local_available_planets).to_bytes(2, "little"), "Main RAM")])
             if area_id != self.last_area:
                 self.last_area = area_id

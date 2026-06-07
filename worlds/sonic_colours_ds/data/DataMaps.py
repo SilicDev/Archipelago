@@ -56,6 +56,16 @@ level_id_to_location = [
     LocationNames.asteroid_coaster_mission_3,
 ]
 
+level_id_to_access_item = [ # only use for planet map
+    ItemNames.tropical_resort_unlock,
+    ItemNames.sweet_mountain_unlock,
+    ItemNames.starlight_carnival_unlock,
+    ItemNames.planet_wisp_unlock,
+    ItemNames.aquarium_park_unlock,
+    ItemNames.asteroid_coaster_unlock,
+    ItemNames.terminal_velocity_unlock,
+]
+
 access_item_to_offset = {
     ItemNames.tropical_resort_unlock: 0,
     ItemNames.sweet_mountain_unlock: 1,
