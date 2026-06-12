@@ -293,14 +293,15 @@ class YohaneDeepblueContext(CommonContext):
                         try:
                             health = int(self.game_process.read_ulong(self.yohane_pointer + CURRENT_HP_OFFSET))
                             max_health = int(self.game_process.read_ulong(self.yohane_pointer + MAX_HP_OFFSET))
-                            if (health < self.last_health and max_health == self.last_max_health and 
-                                    self.can_send_damagelink):
-                                await self.send_damage(self.last_health - health)
-                                self.can_send_damagelink = False
-                            else:
-                                self.can_send_damagelink = True
-                            self.last_health = health
-                            self.last_max_health = max_health
+                            if self.damagelink_enabled:
+                                if (health < self.last_health and max_health == self.last_max_health and
+                                        self.can_send_damagelink):
+                                    await self.send_damage(self.last_health - health)
+                                    self.can_send_damagelink = False
+                                else:
+                                    self.can_send_damagelink = True
+                                self.last_health = health
+                                self.last_max_health = max_health
                         except Exception:
                             pass
 
