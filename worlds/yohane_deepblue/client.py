@@ -612,8 +612,8 @@ class YohaneDeepblueContext(CommonContext):
             #self.locations_checked = set(args["checked_locations"])
             self.deathlink_enabled = self.slot_data.get("death_link", False)
             self.death_link_group = self.slot_data.get("death_link_group", "")
-            self.deathlink_enabled = self.slot_data.get("death_link", False)
-            self.death_link_group = self.slot_data.get("death_link_group", "")
+            self.damagelink_enabled = self.slot_data.get("damage_link", False)
+            self.damage_link_group = self.slot_data.get("damage_link_group", "")
 
             self.connection_status = ConnectionStatus.CONNECTED
             self.connect_to_game()
