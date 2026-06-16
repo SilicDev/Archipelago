@@ -69,6 +69,11 @@ class UpgradeHints(OptionSet):
     _option_ap = "AP"
 
 
+class RandomStartingWeapon(Toggle):
+    """If `true` replaces the Katar in your starting inventory with a random weapon instead."""
+    display_name = "Random Starting Weapon"
+
+
 class DeathLinkGroup(FreeText):
     """Death Link only applies to players with an identical Group name.
     Games that don't support the Group option count as having an empty group name."""
@@ -118,6 +123,7 @@ class YohaneDeepblueOptions(PerGameCommonOptions, DeathLinkGroupMixin, DamageLin
 
     progressive_character_unlocks: ProgressiveCharacterUnlocks
     upgrade_hints: UpgradeHints
+    random_starting_weapon: RandomStartingWeapon
 
     logic_difficulty: LogicDifficulty
     early_chika_blocks_moved: EarlyChikaBlockMoved

@@ -22,6 +22,7 @@ from .items import (
     progressive_character_table,
     rare_material_table,
     unique_accessories_table,
+    weapons_table,
 )
 from .locations import YohaneDeepblueLocation, location_groups, location_table, setup_locations
 from .options import YohaneDeepblueOptions, yohane_deepblue_option_groups
@@ -86,7 +87,10 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
         connect_regions(self)
 
     def create_items(self) -> None:
-        self.push_precollected(self.create_item(ItemNames.katar))
+        if self.options.random_starting_weapon == Toggle.option_true:
+            self.push_precollected(self.create_item(self.random.choice(sorted(weapons_table.keys()))))
+        else:
+            self.push_precollected(self.create_item(ItemNames.katar))
         self.push_precollected(self.create_item(ItemNames.lailaps_unlock))
         self.get_location(LocationNames.sunken_temple_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
         self.get_location(LocationNames.ruins_boss_defeated_3).place_locked_item(self.create_item(ItemNames.boss_token))
