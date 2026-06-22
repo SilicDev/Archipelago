@@ -36,7 +36,7 @@ unique_accessories_table: dict[str, ItemData] = {
 
 breakable_material_table: dict[str, ItemData] = {
     ItemNames.deepsea_cotton: ItemData(201, False),
-    ItemNames.seaworms_cotton: ItemData(202, False),
+    ItemNames.seaworms_cocoon: ItemData(202, False),
     ItemNames.sea_silk: ItemData(203, False),
     ItemNames.strange_metal: ItemData(204, False),
     ItemNames.antique_bronze_coin: ItemData(205, False),
@@ -60,14 +60,14 @@ breakable_material_table: dict[str, ItemData] = {
     ItemNames.magic_mirror: ItemData(223, False),
     ItemNames.multicolered_seaweed: ItemData(224, False),
     ItemNames.umbra_rag: ItemData(225, False),
+}
+
+enemy_material_table: dict[str, ItemData] = {
     ItemNames.violet_shell: ItemData(227, False),
     ItemNames.viridian_claw: ItemData(228, False),
     ItemNames.emperors_crown: ItemData(229, False),
     ItemNames.compound_lens: ItemData(230, False),
-    ItemNames.squishy_lens: ItemData(231, False),
-}
-
-enemy_material_table: dict[str, ItemData] = {
+    ItemNames.squishy_hide: ItemData(231, False),
     ItemNames.freaky_tentacle: ItemData(232, False),
     #ItemNames.supreme_squid_ink: ItemData(233, False),
     ItemNames.sharp_tooth: ItemData(234, False),
@@ -348,6 +348,7 @@ stackables_set = {
     *enemy_material_table.keys(),
     *rare_material_table.keys(),
     *consumables_table.keys(),
+    *accessories_table.keys(),
 }
 
 equips_set = {

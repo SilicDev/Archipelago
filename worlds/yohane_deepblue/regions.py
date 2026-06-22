@@ -410,7 +410,7 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.coral_hill_right_wall_crab_region, LocationNames.coral_hill_boss_region, None, True)
 
     connect(world, LocationNames.coral_hill_boss_region, LocationNames.coral_hill_bottom_entrance_region, upgraded_mari_rule | kanan_rule, True)
-    connect(world, LocationNames.coral_hill_bottom_entrance_region, LocationNames.shipwreck_boss_region, None)
+    connect(world, LocationNames.coral_hill_bottom_entrance_region, LocationNames.shipwreck_top_entrance_region, None)
 
     connect(world, LocationNames.coral_hill_boss_region, LocationNames.coral_hill_right_entrance_region, ignore_projectile_rule, True)
     connect(world, LocationNames.coral_hill_right_entrance_region, LocationNames.coral_hill_boss_region, None, True)

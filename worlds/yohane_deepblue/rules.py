@@ -40,17 +40,27 @@ boss_token_rule = Has(ItemNames.boss_token, 8)
 def set_rules(world: World) -> None:
     set_chest_rules(world)
     world.set_rule(world.get_location(LocationNames.grotto_boss_defeated), sea_charm_rule)
-    world.set_rule(world.get_location(LocationNames.sunken_volcano_boss_defeated), soarshoes_rule) # remove for hard logic
+    world.set_rule(world.get_location(LocationNames.sunken_volcano_boss_defeated),
+                   soarshoes_rule) # remove for hard logic
     world.set_rule(world.get_location(LocationNames.shipwreck_boss_defeated), ignore_projectile_rule)
-    world.set_rule(world.get_location(LocationNames.infernal_altar_boss_defeated), riko_rule & kanan_rule & hanamaru_rule & gloves_rule & soarshoes_rule)
-    world.set_rule(world.get_location(LocationNames.chika_rescue), CanReachLocation(LocationNames.sunken_temple_boss_defeated))
-    world.set_rule(world.get_location(LocationNames.kanan_rescue), CanReachLocation(LocationNames.ruins_boss_defeated_3))
-    world.set_rule(world.get_location(LocationNames.dia_rescue), CanReachLocation(LocationNames.grotto_boss_defeated))
-    world.set_rule(world.get_location(LocationNames.ruby_rescue), CanReachLocation(LocationNames.coral_hill_boss_defeated))
-    world.set_rule(world.get_location(LocationNames.you_rescue), CanReachLocation(LocationNames.sea_of_trees_boss_defeated))
-    world.set_rule(world.get_location(LocationNames.mari_rescue), CanReachLocation(LocationNames.crystalline_grotto_boss_defeated))
-    world.set_rule(world.get_location(LocationNames.riko_rescue), CanReachLocation(LocationNames.sunken_temple_boss_defeated))
-    world.set_rule(world.get_location(LocationNames.hanamaru_rescue), CanReachLocation(LocationNames.shipwreck_boss_defeated))
+    world.set_rule(world.get_location(LocationNames.infernal_altar_boss_defeated),
+                   riko_rule & kanan_rule & hanamaru_rule & gloves_rule & soarshoes_rule)
+    world.set_rule(world.get_location(LocationNames.chika_rescue),
+                   CanReachLocation(LocationNames.sunken_temple_boss_defeated))
+    world.set_rule(world.get_location(LocationNames.kanan_rescue),
+                   CanReachLocation(LocationNames.ruins_boss_defeated_3))
+    world.set_rule(world.get_location(LocationNames.dia_rescue),
+                   CanReachLocation(LocationNames.grotto_boss_defeated))
+    world.set_rule(world.get_location(LocationNames.ruby_rescue),
+                   CanReachLocation(LocationNames.coral_hill_boss_defeated))
+    world.set_rule(world.get_location(LocationNames.you_rescue),
+                   CanReachLocation(LocationNames.sea_of_trees_boss_defeated))
+    world.set_rule(world.get_location(LocationNames.mari_rescue),
+                   CanReachLocation(LocationNames.crystalline_grotto_boss_defeated))
+    world.set_rule(world.get_location(LocationNames.riko_rescue),
+                   CanReachLocation(LocationNames.sunken_volcano_boss_defeated))
+    world.set_rule(world.get_location(LocationNames.hanamaru_rescue),
+                   CanReachLocation(LocationNames.shipwreck_boss_defeated))
     world.set_rule(world.get_location(LocationNames.chika_upgrade_quest), Has(ItemNames.chika_upgrade))
     world.set_rule(world.get_location(LocationNames.kanan_upgrade_quest), Has(ItemNames.kanan_upgrade))
     world.set_rule(world.get_location(LocationNames.dia_upgrade_quest), Has(ItemNames.dia_upgrade))
@@ -64,7 +74,8 @@ def set_rules(world: World) -> None:
 def set_chest_rules(world: World) -> None:
     # Sunken Temple
     world.set_rule(world.get_location(LocationNames.fishy_archery_chest), gloves_rule | soarshoes_rule)
-    world.set_rule(world.get_location(LocationNames.katys_mask_room_chest), chika_rule & (you_skip_rule | (soarshoes_rule & chika_block_rule)))
+    world.set_rule(world.get_location(LocationNames.katys_mask_room_chest),
+                   chika_rule & (you_skip_rule | (soarshoes_rule & chika_block_rule)))
     world.set_rule(world.get_location(LocationNames.chika_testing_grounds_chest), you_rule)
 
     # Grotto
@@ -81,7 +92,8 @@ def set_chest_rules(world: World) -> None:
     # Sunken Volcano
     world.set_rule(world.get_location(LocationNames.sunken_volcano_next_to_first_save_room_chest), gloves_rule)
     world.set_rule(world.get_location(LocationNames.soarshoes_obligatory_issue_room_chest), soarshoes_rule)
-    world.set_rule(world.get_location(LocationNames.tonosamas_parts_room_chest), (big_weapon_rule | dia_rule | upgraded_hanamaru_rule | mari_rule))
+    world.set_rule(world.get_location(LocationNames.tonosamas_parts_room_chest),
+                   (big_weapon_rule | dia_rule | upgraded_hanamaru_rule | mari_rule))
 
     # Shipwreck
     world.set_rule(world.get_location(LocationNames.final_guard_room_chest), you_rule)
@@ -92,14 +104,17 @@ def set_chest_rules(world: World) -> None:
     world.set_rule(world.get_location(LocationNames.lost_monstie_room_chest), mari_rule & upgraded_ruby_rule)
 
     # Crystalline Grotto
-    world.set_rule(world.get_location(LocationNames.isolated_chest_room_chest), (you_rule | soarshoes_rule)) # for easier access
+    world.set_rule(world.get_location(LocationNames.isolated_chest_room_chest),
+                   (you_rule | soarshoes_rule)) # for easier access
     world.set_rule(world.get_location(LocationNames.looong_slide_room_chest), you_rule & ruby_rule)
     world.set_rule(world.get_location(LocationNames.mari_issue_room_chest), mari_rule)
 
     # Sea of Trees
-    world.set_rule(world.get_location(LocationNames.giant_poison_enemy_crab_room_chest), hanamaru_rule | (you_rule & (soarshoes_rule | gloves_rule)))
+    world.set_rule(world.get_location(LocationNames.giant_poison_enemy_crab_room_chest),
+                   hanamaru_rule | (you_rule & (soarshoes_rule | gloves_rule)))
     world.set_rule(world.get_location(LocationNames.scarlet_delta_suit_room_chest), dia_rule & riko_rule)
-    world.set_rule(world.get_location(LocationNames.golden_snail_room_chest), ignore_projectile_rule) # can remove the ignore projectile rule on harder logic
+    world.set_rule(world.get_location(LocationNames.golden_snail_room_chest),
+                   ignore_projectile_rule)# can remove the ignore projectile rule on harder logic
     world.set_rule(world.get_location(LocationNames.you_testing_grounds_chest), you_rule)
 
     # Infernal Altar

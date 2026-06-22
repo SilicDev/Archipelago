@@ -28,7 +28,7 @@ ruby_upgrade = "Cute Pochette"
 
 # Breakable Materials
 deepsea_cotton = "Deepsea Cotton"
-seaworms_cotton = "Seaworm's Cotton"
+seaworms_cocoon = "Seaworm's Cocoon"
 sea_silk = "Sea Silk"
 strange_metal = "Strange Metal"
 antique_bronze_coin = "Antique Bronze Coin"
@@ -56,9 +56,9 @@ violet_shell = "Violet Shell"
 viridian_claw = "Viridian Claw"
 emperors_crown = "Emperor's Crown"
 compound_lens = "Compound Lens"
-squishy_lens = "Squishy Lens"
 
 # Enemy Materials
+squishy_hide = "Squishy Hide"
 freaky_tentacle = "Freaky Tentacle"
 supreme_squid_ink = "Supreme Squid Ink"
 sharp_tooth = "Sharp Tooth"
