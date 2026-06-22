@@ -1,7 +1,9 @@
+from Options import Toggle
 from rule_builder.rules import CanReachLocation, Filtered, Has, HasAny, OptionFilter
 from worlds.AutoWorld import World
 
 from .data import ItemNames, LocationNames
+from .locations import crafting_locations, location_table
 from .options import EarlyChikaBlockMoved, EnableYouSkips
 
 you_enabled_filter = [OptionFilter(EnableYouSkips, EnableYouSkips.option_true)]
@@ -69,6 +71,11 @@ def set_rules(world: World) -> None:
     world.set_rule(world.get_location(LocationNames.mari_upgrade_quest), Has(ItemNames.mari_upgrade))
     world.set_rule(world.get_location(LocationNames.riko_upgrade_quest), Has(ItemNames.riko_upgrade))
     world.set_rule(world.get_location(LocationNames.hanamaru_upgrade_quest), Has(ItemNames.hanamaru_upgrade))
+
+    if world.options.recipesanity == Toggle.option_true:
+        for location in crafting_locations:
+            location_id = location_table[location]
+            world.set_rule(world.get_location(location), world.recipe_list.recipes[location_id - 701].access_rule)
     pass
 
 def set_chest_rules(world: World) -> None:

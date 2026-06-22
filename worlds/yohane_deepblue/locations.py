@@ -1,4 +1,5 @@
 from BaseClasses import Location
+from Options import Toggle
 from worlds.AutoWorld import World
 
 from .data import LocationNames
@@ -115,6 +116,102 @@ chest_locations = {
 }
 
 
+crafting_locations = {
+    LocationNames.recipe_01: 701,
+    LocationNames.recipe_02: 702,
+    LocationNames.recipe_03: 703,
+    LocationNames.recipe_04: 704,
+    LocationNames.recipe_05: 705,
+    LocationNames.recipe_06: 706,
+    LocationNames.recipe_07: 707,
+    LocationNames.recipe_08: 708,
+    LocationNames.recipe_09: 709,
+    LocationNames.recipe_10: 710,
+    LocationNames.recipe_11: 711,
+    LocationNames.recipe_12: 712,
+    LocationNames.recipe_13: 713,
+    LocationNames.recipe_14: 714,
+    LocationNames.recipe_15: 715,
+    LocationNames.recipe_16: 716,
+    LocationNames.recipe_17: 717,
+    LocationNames.recipe_18: 718,
+    LocationNames.recipe_19: 719,
+    LocationNames.recipe_20: 720,
+    LocationNames.recipe_21: 721,
+    LocationNames.recipe_22: 722,
+    LocationNames.recipe_23: 723,
+    LocationNames.recipe_24: 724,
+    LocationNames.recipe_25: 725,
+    LocationNames.recipe_26: 726,
+    LocationNames.recipe_27: 727,
+    LocationNames.recipe_28: 728,
+    LocationNames.recipe_29: 729,
+    LocationNames.recipe_30: 730,
+    LocationNames.recipe_31: 731,
+    LocationNames.recipe_32: 732,
+    LocationNames.recipe_33: 733,
+    LocationNames.recipe_34: 734,
+    LocationNames.recipe_35: 735,
+    LocationNames.recipe_36: 736,
+    LocationNames.recipe_37: 737,
+    LocationNames.recipe_38: 738,
+    LocationNames.recipe_39: 739,
+    LocationNames.recipe_40: 740,
+    LocationNames.recipe_41: 741,
+    LocationNames.recipe_42: 742,
+    LocationNames.recipe_43: 743,
+    LocationNames.recipe_44: 744,
+    LocationNames.recipe_45: 745,
+    LocationNames.recipe_46: 746,
+    LocationNames.recipe_47: 747,
+    LocationNames.recipe_48: 748,
+    LocationNames.recipe_49: 749,
+    LocationNames.recipe_50: 750,
+    LocationNames.recipe_51: 751,
+    LocationNames.recipe_52: 752,
+    LocationNames.recipe_53: 753,
+    LocationNames.recipe_54: 754,
+    LocationNames.recipe_55: 755,
+    LocationNames.recipe_56: 756,
+    LocationNames.recipe_57: 757,
+    LocationNames.recipe_58: 758,
+    LocationNames.recipe_59: 759,
+    LocationNames.recipe_60: 760,
+    LocationNames.recipe_61: 761,
+    LocationNames.recipe_62: 762,
+    LocationNames.recipe_63: 763,
+    LocationNames.recipe_64: 764,
+    LocationNames.recipe_65: 765,
+    LocationNames.recipe_66: 766,
+    LocationNames.recipe_67: 767,
+    LocationNames.recipe_68: 768,
+    LocationNames.recipe_69: 769,
+    LocationNames.recipe_70: 770,
+    LocationNames.recipe_71: 771,
+    LocationNames.recipe_72: 772,
+    LocationNames.recipe_73: 773,
+    LocationNames.recipe_74: 774,
+    LocationNames.recipe_75: 775,
+    LocationNames.recipe_76: 776,
+    LocationNames.recipe_77: 777,
+    LocationNames.recipe_78: 778,
+    LocationNames.recipe_79: 779,
+    LocationNames.recipe_80: 780,
+    LocationNames.recipe_81: 781,
+    LocationNames.recipe_82: 782,
+    LocationNames.recipe_83: 783,
+    LocationNames.recipe_84: 784,
+    LocationNames.recipe_85: 785,
+    LocationNames.recipe_86: 786,
+    LocationNames.recipe_87: 787,
+    LocationNames.recipe_88: 788,
+    LocationNames.recipe_89: 789,
+    LocationNames.recipe_90: 790,
+    LocationNames.recipe_91: 791,
+    LocationNames.recipe_92: 792,
+    LocationNames.recipe_93: 793,
+}
+
 
 menu_region_locations = {
     LocationNames.chika_upgrade_quest,
@@ -125,6 +222,7 @@ menu_region_locations = {
     LocationNames.you_upgrade_quest,
     LocationNames.dia_upgrade_quest,
     LocationNames.mari_upgrade_quest,
+    *crafting_locations
 }
 
 
@@ -444,15 +542,21 @@ location_table: dict[str, int | None] = {
     **boss_fight_locations,
     **boss_refight_locations,
     **chest_locations,
+    **crafting_locations
 }
 
-def setup_locations(world: World, player: int):
-    locations = {}
+def setup_locations(world: World, player: int) -> dict[str, int | None]:
+    is_ut = getattr(world.multiworld, "generation_is_fake", False)
+    if is_ut:
+        return location_table
+    locations: dict[str, int | None] = {}
     locations.update({**character_rescue_locations})
     locations.update({**character_upgrade_locations})
     locations.update({**boss_fight_locations})
     locations.update({**boss_refight_locations})
     locations.update({**chest_locations})
+    if world.options.recipesanity == Toggle.option_true:
+        locations.update({**crafting_locations})
     return locations
 
 lookup_id_to_name: dict[int, str] = {idx: name for name, idx in location_table.items() if idx is not None}
@@ -509,4 +613,60 @@ location_groups: dict[str, set[str]] = {
                      sea_of_trees_long_slide_region_locations),
     "Infernal Altar": infernal_altar_region_locations,
     "Aqours Memoria": {boss for boss in aqours_memoria_region_locations if location_table[boss] is not None},
+    "Crafting Recipe": set(crafting_locations.keys())
+}
+
+region_groups = {
+    "Sunken Temple": {LocationNames.sunken_temple_entrance_region, LocationNames.sunken_temple_random_region,
+                      LocationNames.sunken_temple_main_region, LocationNames.sunken_temple_post_boss_region},
+    "Grotto": {LocationNames.grotto_main_region, LocationNames.grotto_boss_region,
+               LocationNames.grotto_top_corridor_region, LocationNames.grotto_top_region,
+               LocationNames.grotto_coral_hill_entrance_region},
+    "Ruins": {LocationNames.ruins_grotto_entrance_region, LocationNames.ruins_boss_1_region,
+              LocationNames.ruins_boss_2_region, LocationNames.ruins_post_boss_2_region,
+              LocationNames.ruins_boss_3_region, LocationNames.ruins_post_boss_3_region,
+              LocationNames.ruins_left_of_sandpit_region},
+    "Sunken Volcano": {LocationNames.sunken_volcano_left_region, LocationNames.sunken_volcano_main_region,
+                       LocationNames.sunken_volcano_boss_region},
+    "Coral Hill": {LocationNames.coral_hill_left_entrance_region, LocationNames.coral_hill_left_save_region,
+                   LocationNames.coral_hill_top_left_region, LocationNames.coral_hill_bottom_left_region,
+                   LocationNames.coral_hill_left_climb_region, LocationNames.coral_hill_random_save_region,
+                   LocationNames.coral_hill_bottom_region, LocationNames.coral_hill_random_region,
+                   LocationNames.coral_hill_post_random_region, LocationNames.coral_hill_soarshoesnt_chest_region,
+                   LocationNames.coral_hill_center_save_region, LocationNames.coral_hill_teleporting_fish_chest_region,
+                   LocationNames.coral_hill_climb_bottom_region, LocationNames.coral_hill_teleporting_fish_room_region,
+                   LocationNames.coral_hill_climb_top_region, LocationNames.coral_hill_below_top_save_region,
+                   LocationNames.coral_hill_top_save_region, LocationNames.coral_hill_top_save_climb_region,
+                   LocationNames.coral_hill_left_wall_crab_region, LocationNames.coral_hill_wall_crab_chest_region,
+                   LocationNames.coral_hill_right_wall_crab_region, LocationNames.coral_hill_boss_region,
+                   LocationNames.coral_hill_spawner_trident_region, LocationNames.coral_hill_right_entrance_region,
+                   LocationNames.coral_hill_bottom_entrance_region},
+    "Crystalline Grotto": {LocationNames.crystalline_grotto_entrance_region,
+                           LocationNames.crystalline_grotto_left_save_region,
+                           LocationNames.crystalline_grotto_top_left_save_region,
+                           LocationNames.crystalline_grotto_top_region,
+                           LocationNames.crystalline_grotto_top_save_region,
+                           LocationNames.crystalline_grotto_random_region,
+                           LocationNames.crystalline_grotto_right_save_region,
+                           LocationNames.crystalline_grotto_bottom_region,
+                           LocationNames.crystalline_grotto_post_boss_region,
+                           LocationNames.crystalline_grotto_center_region,
+                           LocationNames.crystalline_grotto_center_save_region,
+                           LocationNames.crystalline_grotto_left_center_save_region,
+                           LocationNames.crystalline_grotto_mari_chest_region,
+                           LocationNames.crystalline_grotto_boss_region},
+    "Shipwreck": {LocationNames.shipwreck_left_region, LocationNames.shipwreck_left_mast_region,
+                  LocationNames.shipwreck_main_region, LocationNames.shipwreck_bottom_region,
+                  LocationNames.shipwreck_sealed_off_chest_region, LocationNames.shipwreck_postal_guild_bag_region,
+                  LocationNames.shipwreck_post_postal_guild_bag_region, LocationNames.shipwreck_gloves_region,
+                  LocationNames.shipwreck_top_gloves_region, LocationNames.shipwreck_right_mast_region,
+                  LocationNames.shipwreck_top_entrance_region, LocationNames.shipwreck_boss_region,
+                  LocationNames.shipwreck_right_entrance_region},
+    "Sea of Trees": {LocationNames.sea_of_trees_main_region, LocationNames.sea_of_trees_random_region,
+                     LocationNames.sea_of_trees_right_region, LocationNames.sea_of_trees_top_left_region,
+                     LocationNames.sea_of_trees_boss_region, LocationNames.sea_of_trees_post_boss_region,
+                     LocationNames.sea_of_trees_center_save_region, LocationNames.sea_of_trees_center_chika_region,
+                     LocationNames.sea_of_trees_long_slide_region},
+    "Infernal Altar": {LocationNames.infernal_altar_region},
+    "Aqours Memoria": {LocationNames.aqours_memoria_region},
 }

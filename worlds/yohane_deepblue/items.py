@@ -362,6 +362,25 @@ yen_set = {
     ItemNames.big_yen,
 }
 
+crafting_accessories_set = {
+    ItemNames.silk_cape,
+    ItemNames.gold_threaded_cape,
+    ItemNames.fortune_tellers_veil,
+    ItemNames.fallen_angels_cloak_bad,
+    ItemNames.tattered_cloth,
+}
+
+valid_crafting_results = {
+    **unique_accessories_table,
+    **character_upgrade_table,
+    **breakable_material_table,
+    **enemy_material_table,
+    **rare_material_table,
+    **consumables_table,
+    **weapons_table,
+    **accessories_table,
+}
+
 item_table: dict[str, ItemData] = {
     **unique_accessories_table,
     **character_unlock_table,

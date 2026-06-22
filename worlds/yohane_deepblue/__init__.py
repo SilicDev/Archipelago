@@ -3,7 +3,7 @@ Archipelago World definition for YOHANE THE PARHELION -BLAZE in the DEEPBLUE-
 """
 import typing
 
-from BaseClasses import Item, ItemClassification, Tutorial
+from BaseClasses import Item, ItemClassification, MultiWorld, Tutorial
 from Options import Toggle
 from rule_builder.cached_world import CachedRuleBuilderWorld
 from worlds.AutoWorld import WebWorld, World
@@ -12,9 +12,11 @@ from worlds.LauncherComponents import Component, Type, components, launch
 from .data import ItemNames, LocationNames
 from .items import (
     YohaneDeepblueItem,
+    accessories_table,
     character_unlock_table,
     character_upgrade_table,
     consumables_table,
+    crafting_accessories_set,
     event_table,
     item_groups,
     item_table,
@@ -26,6 +28,7 @@ from .items import (
 )
 from .locations import YohaneDeepblueLocation, location_groups, location_table, setup_locations
 from .options import YohaneDeepblueOptions, yohane_deepblue_option_groups
+from .recipe import RecipeList
 from .regions import connect_regions, create_regions
 from .rules import set_rules
 
@@ -81,6 +84,17 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
 
     required_client_version = (0, 6, 7)
 
+    def __init__(self, multiworld: MultiWorld, player: int) -> None:
+        super().__init__(multiworld, player)
+        self.recipe_list = RecipeList()
+
+    def generate_early(self) -> None:
+        if self.options.recipesanity == Toggle.option_true:
+            # recipes
+            self.recipe_list.generate(self)
+            pass
+        return super().generate_early()
+
     def create_regions(self) -> None:
         active_locations = setup_locations(self, self.player)
         create_regions(self, active_locations)
@@ -101,12 +115,22 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
         self.get_location(LocationNames.sunken_volcano_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
         self.get_location(LocationNames.shipwreck_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
         self.get_location(LocationNames.aquors_memoria_boss_defeated).place_locked_item(self.create_item(ItemNames.victory))
+
         num_locations_to_fill = len(self.multiworld.get_unfilled_locations(self.player))
         itempool: list[Item] = []
         itempool.extend([self.create_item(item) for item in unique_accessories_table
                          for _ in range(unique_accessories_table[item].quantity)])
-        itempool.extend([self.create_item(item) for item in rare_material_table
-                         for _ in range(rare_material_table[item].quantity)])
+
+        if self.options.recipesanity == Toggle.option_true:
+            itempool.extend([self.create_item(item) for item in self.recipe_list.rare_materials
+                             for _ in range(self.recipe_list.rare_materials[item])])
+            itempool.extend([self.create_item(item) for item in weapons_table])
+            accessories = sorted(set(accessories_table.keys()).difference(crafting_accessories_set))
+            itempool.extend([self.create_item(item) for item in accessories])
+        else:
+            itempool.extend([self.create_item(item) for item in rare_material_table
+                            for _ in range(rare_material_table[item].quantity)])
+
         if self.options.progressive_character_unlocks == Toggle.option_true:
             itempool.extend([self.create_item(item) for item in progressive_character_table
                             for _ in range(2)])
@@ -114,6 +138,7 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
             itempool.extend(self.create_item(item) for item in character_unlock_table
                             if item != ItemNames.lailaps_unlock)
             itempool.extend(self.create_item(item) for item in character_upgrade_table)
+
         surplus_checks = num_locations_to_fill - len(itempool)
         itempool += [self.create_filler() for _ in range(surplus_checks)]
         self.multiworld.itempool += itempool
@@ -130,7 +155,10 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
         elif data.trap:
             classification = ItemClassification.trap
         elif name in rare_material_table.keys():
-            classification = ItemClassification.useful
+            if self.options.recipesanity:
+                classification = ItemClassification.progression
+            else:
+                classification = ItemClassification.useful
         return YohaneDeepblueItem(name, classification, data.code, self.player)
 
     def set_rules(self) -> None:
@@ -151,10 +179,12 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
             "enable_you_skips",
             "progressive_character_unlocks",
             "upgrade_hints",
+            "recipesanity"
         )
         upgrades = []
         for item in character_upgrade_table.keys():
             location = self.multiworld.find_item(item, self.player)
             upgrades.append((location.player, location.address))
         slot_data["upgrades"] = upgrades
+        slot_data["recipes"] = int.from_bytes(self.recipe_list.get_bytes(), "little")
         return slot_data

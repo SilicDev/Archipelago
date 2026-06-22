@@ -8,12 +8,9 @@ from Options import (
     DeathLinkMixin,
     DefaultOnToggle,
     FreeText,
-    NamedRange,
     OptionGroup,
-    OptionList,
     OptionSet,
     PerGameCommonOptions,
-    Range,
     StartInventoryPool,
     Toggle,
 )
@@ -74,6 +71,15 @@ class RandomStartingWeapon(Toggle):
     display_name = "Random Starting Weapon"
 
 
+class Recipesanity(Toggle):
+    """
+    If `true` randomizes recipes and adds their normal results to the item pool.
+
+    WARNING: this setting has no logic yet and may result in unbeatable seed.
+    """
+    display_name = "Recipesanity"
+
+
 class DeathLinkGroup(FreeText):
     """Death Link only applies to players with an identical Group name.
     Games that don't support the Group option count as having an empty group name."""
@@ -124,6 +130,7 @@ class YohaneDeepblueOptions(PerGameCommonOptions, DeathLinkGroupMixin, DamageLin
     progressive_character_unlocks: ProgressiveCharacterUnlocks
     upgrade_hints: UpgradeHints
     random_starting_weapon: RandomStartingWeapon
+    recipesanity: Recipesanity
 
     logic_difficulty: LogicDifficulty
     early_chika_blocks_moved: EarlyChikaBlockMoved
