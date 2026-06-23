@@ -54,6 +54,7 @@ SCDS_HEADER = 0x3FFE00
 SCDS_RAM_START = 0x02000000
 SCDS_RAM_SIZE = 0x00400000
 
+
 class SonicColoursDSClient(BizHawkClient):
     game = "Sonic Colours (DS)"
     system = "NDS"
@@ -70,6 +71,7 @@ class SonicColoursDSClient(BizHawkClient):
     last_area: int
     num_items_received: int
 
+
     def initialize_client(self) -> None:
         self.local_checked_locations = set()
         self.local_access_items = set()
@@ -82,6 +84,7 @@ class SonicColoursDSClient(BizHawkClient):
         self.local_emeralds = 0
         self.num_items_received = 0
         pass
+
 
     async def validate_rom(self, ctx: "BizHawkClientContext") -> bool:
         from CommonClient import logger
@@ -109,6 +112,7 @@ class SonicColoursDSClient(BizHawkClient):
 
         self.initialize_client()
         return True
+
 
     async def game_watcher(self, ctx: "BizHawkClientContext") -> None:
         from CommonClient import logger
@@ -195,7 +199,8 @@ class SonicColoursDSClient(BizHawkClient):
                 for location in checked_locations:
                     location_name = ctx.location_names.lookup_in_game(location)
                     if location_name in red_rings_table.keys():
-                        red_ring_storage |= 1 << (location_table[location_name] - location_table[LocationNames.tropical_resort_act_1_red_ring_1])
+                        red_ring_storage |= 1 << (location_table[location_name] -
+                                                  location_table[LocationNames.tropical_resort_act_1_red_ring_1])
                 if red_ring_storage != self.local_red_rings:
                     await bizhawk.write(
                         ctx.bizhawk_ctx,
@@ -219,7 +224,9 @@ class SonicColoursDSClient(BizHawkClient):
                         await bizhawk.guarded_write(
                             ctx.bizhawk_ctx,
                             [
-                                (SCDS_CHAOS_EMERALDS, DataMaps.level_id_to_emeralds[level_id].to_bytes(2, "little"), "Main RAM")
+                                (SCDS_CHAOS_EMERALDS,
+                                 DataMaps.level_id_to_emeralds[level_id].to_bytes(2, "little"),
+                                 "Main RAM")
                             ], [guards["LEVEL"]])
                     if ctx.slot_data["goal"] == Goal.option_wisp_armor:
                         if not ctx.finished_game and story_completion >= 0x100000:
@@ -250,7 +257,9 @@ class SonicColoursDSClient(BizHawkClient):
                                 await bizhawk.guarded_write(
                                     ctx.bizhawk_ctx,
                                     [
-                                        (SCDS_CHAOS_EMERALDS, DataMaps.level_id_to_emeralds[level_id].to_bytes(2, "little"), "Main RAM")
+                                        (SCDS_CHAOS_EMERALDS,
+                                         DataMaps.level_id_to_emeralds[level_id].to_bytes(2, "little"),
+                                         "Main RAM")
                                     ], [guards["LEVEL"]])
                             else:
                                 await bizhawk.write(
@@ -258,15 +267,18 @@ class SonicColoursDSClient(BizHawkClient):
                                     [
                                         (SCDS_CHAOS_EMERALDS, self.local_emeralds.to_bytes(2, "little"), "Main RAM")
                                     ])
-                            if self.local_emeralds == 0x7F and ((story_completion > 0xF0000 and story_completion < 0x110000) or 
-                                                                (story_completion < 0xF0000 and location_table[LocationNames.nega_wisp_armor] in self.local_checked_locations)):
+                            if (self.local_emeralds == 0x7F and
+                                    ((story_completion > 0xF0000 and story_completion < 0x110000) or
+                                        (story_completion < 0xF0000 and
+                                         location_table[LocationNames.nega_wisp_armor] in self.local_checked_locations))):
                                 self.local_available_planets |= 1 << 7
                                 await bizhawk.write(
                                     ctx.bizhawk_ctx,
                                     [
-                                        (SCDS_STORY_COMPLETION, 0x104455.to_bytes(3, "little"), "Main RAM"), # game handles opening mother wisp from here
+                                        (SCDS_STORY_COMPLETION, 0x104455.to_bytes(3, "little"), "Main RAM"),
                                         (SCDS_PLANET_AREA_FLAGS, 0xFFFFFF.to_bytes(3, "little"), "Main RAM"),
                                         (SCDS_MISSION_UNLOCK_FLAGS, 0xFFFFFF.to_bytes(3, "little"), "Main RAM")
+                                        # game handles opening mother wisp from here
                                     ])
                             elif story_completion < 0xF0000:
                                 await bizhawk.write(
@@ -405,6 +417,7 @@ class SonicColoursDSClient(BizHawkClient):
             pass
         pass
 
+
     async def handle_received_items(self, ctx: "BizHawkClientContext", guards: dict[str, tuple[int, bytes, str]]) -> None:
         game_num_items_received = 0
         read_result = await bizhawk.guarded_read(
@@ -433,6 +446,7 @@ class SonicColoursDSClient(BizHawkClient):
                     [(SCDS_ITEMS_RECEIVED, (self.num_items_received << 4).to_bytes(4, "little"), "Main RAM")]
                 )
             self.num_items_received += 1
+
 
     async def handle_junk_items(self, ctx: "BizHawkClientContext", guards: dict[str, tuple[int, bytes, str]]) -> None:
         counters = int.from_bytes(guards["COUNTERS"][1], "little")
@@ -496,8 +510,15 @@ class SonicColoursDSClient(BizHawkClient):
                     await bizhawk.guarded_write(
                         ctx.bizhawk_ctx,
                         [
-                            (counters + SCDS_COUNTER_RINGS_OFFSET, (rings + rings_added).to_bytes(2, "little"), "Main RAM"),
-                            (counters + SCDS_COUNTER_TOTAL_RINGS_OFFSET, (total_rings + rings_added).to_bytes(2, "little"), "Main RAM")
+                            (
+                                counters + SCDS_COUNTER_RINGS_OFFSET,
+                                (rings + rings_added).to_bytes(2, "little"),
+                                "Main RAM"),
+                            (
+                                counters + SCDS_COUNTER_TOTAL_RINGS_OFFSET,
+                                (total_rings + rings_added).to_bytes(2, "little"),
+                                "Main RAM"
+                            )
                         ], [guards["COUNTERS"]])
                     await bizhawk.display_message(ctx.bizhawk_ctx, f"You received {item}")
                     return
@@ -505,6 +526,7 @@ class SonicColoursDSClient(BizHawkClient):
             # failed to activate, requeue it
             self.local_junk_items.append(item)
         pass
+
 
     def on_package(self, ctx: "BizHawkClientContext", cmd: str, args: dict) -> None:
         if cmd == "Connected":

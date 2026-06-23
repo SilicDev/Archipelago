@@ -10,8 +10,10 @@ class ItemData(typing.NamedTuple):
     progression: bool
     quantity: int = 1
 
+
 class SonicColoursDSItem(Item):
     game: str = "Sonic Colours (DS)"
+
 
 junk_table = {
     ItemNames.five_rings: ItemData(1, False),
@@ -19,6 +21,7 @@ junk_table = {
     ItemNames.twenty_rings: ItemData(3, False),
     ItemNames.extra_life: ItemData(4, False),
 }
+
 
 emeralds_table = {
     ItemNames.green_emerald: ItemData(10, True),
@@ -30,6 +33,7 @@ emeralds_table = {
     ItemNames.cyan_emerald: ItemData(16, True),
 }
 
+
 wisps_table = {
     ItemNames.white_wisp: ItemData(20, False),
     ItemNames.red_wisp: ItemData(21, False),
@@ -39,6 +43,7 @@ wisps_table = {
     ItemNames.violet_wisp: ItemData(25, False)
 }
 
+
 wisp_unlocks_table = {
     ItemNames.white_wisp_unlock: ItemData(30, True),
     ItemNames.red_wisp_unlock: ItemData(31, True),
@@ -47,6 +52,7 @@ wisp_unlocks_table = {
     ItemNames.cyan_wisp_unlock: ItemData(34, True),
     ItemNames.violet_wisp_unlock: ItemData(35, True)
 }
+
 
 planet_access_table = {
     ItemNames.tropical_resort_unlock: ItemData(40, True),
@@ -58,10 +64,12 @@ planet_access_table = {
     ItemNames.terminal_velocity_unlock: ItemData(46, True),
 }
 
+
 event_table = {
     ItemNames.park_keys: ItemData(None, True),
     ItemNames.mother_wisp: ItemData(None, True)
 }
+
 
 item_table = {
     **junk_table,
@@ -70,6 +78,7 @@ item_table = {
     **wisp_unlocks_table,
     **planet_access_table
 }
+
 
 lookup_id_to_name: dict[int, str] = {data.code: item_name for item_name, data in item_table.items() if data.code}
 

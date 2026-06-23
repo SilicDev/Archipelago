@@ -7,6 +7,7 @@ class TestGoal(SonicColoursDSTestBase):
         "goal": 1,
     }
 
+
     def test_goal_access(self) -> None:
         self.collect_by_name([
             ItemNames.white_wisp_unlock,

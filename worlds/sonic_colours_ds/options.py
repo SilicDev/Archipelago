@@ -6,17 +6,10 @@ from dataclasses import dataclass
 from BaseClasses import PlandoOptions
 from Options import (
     Choice,
-    DeathLink,
-    DefaultOnToggle,
-    FreeText,
-    NamedRange,
     OptionError,
     OptionGroup,
-    OptionList,
     OptionSet,
     PerGameCommonOptions,
-    Range,
-    StartInventory,
     Toggle,
 )
 from worlds.AutoWorld import World
@@ -36,6 +29,7 @@ class Goal(Choice):
     option_wisp_armor = 0
     option_mother_wisp = 1
 
+
 class RankRequirement(Choice):
     """
     The rank required to consider a level beaten.
@@ -47,6 +41,7 @@ class RankRequirement(Choice):
     option_rank_b = 2
     option_rank_a = 3
     option_rank_s = 4
+
 
 class StartingPlanets(OptionSet):
     """
@@ -63,11 +58,13 @@ class StartingPlanets(OptionSet):
         if len(self.value) == 0:
             raise OptionError("At least one key has to be selected for option StartingPlanets!")
 
+
 class RedRingSanity(Toggle):
     """
     Collecting a Red Star Ring gives you an item.
     """
     display_name = "Red Ring Sanity"
+
 
 scds_option_groups = [
     OptionGroup("Goal Options", [
@@ -78,6 +75,7 @@ scds_option_groups = [
         RedRingSanity
     ])
 ]
+
 
 @dataclass
 class SonicColoursDSOptions(PerGameCommonOptions):

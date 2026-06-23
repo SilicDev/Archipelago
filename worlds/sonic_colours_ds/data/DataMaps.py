@@ -56,6 +56,7 @@ level_id_to_location = [
     LocationNames.asteroid_coaster_mission_3,
 ]
 
+
 level_id_to_access_item = [ # only use for planet map
     ItemNames.tropical_resort_unlock,
     ItemNames.sweet_mountain_unlock,
@@ -65,6 +66,7 @@ level_id_to_access_item = [ # only use for planet map
     ItemNames.asteroid_coaster_unlock,
     ItemNames.terminal_velocity_unlock,
 ]
+
 
 access_item_to_offset = {
     ItemNames.tropical_resort_unlock: 0,
@@ -76,6 +78,7 @@ access_item_to_offset = {
     ItemNames.terminal_velocity_unlock: 6,
 }
 
+
 area_id_to_tutorial = [
     None,
     LocationNames.white_wisp_tutorial,
@@ -85,6 +88,7 @@ area_id_to_tutorial = [
     LocationNames.cyan_wisp_tutorial,
     LocationNames.violet_wisp_tutorial,
 ]
+
 
 level_id_to_wisps = {
     9: [ItemNames.red_wisp],
@@ -125,6 +129,7 @@ level_id_to_wisps = {
     45: [ItemNames.cyan_wisp, ItemNames.violet_wisp],
 }
 
+
 boss_level_wisps = {
     11: 0x02,
     18: 0x02,
@@ -133,6 +138,7 @@ boss_level_wisps = {
     36: 0x10,
     42: 0x20,
 }
+
 
 level_id_to_emeralds = {
     8: 0x3F,
@@ -150,11 +156,13 @@ level_id_to_emeralds = {
     41: 0x1F
 }
 
+
 item_to_rings = {
     ItemNames.five_rings: 5,
     ItemNames.ten_rings: 10,
     ItemNames.twenty_rings: 20,
 }
+
 
 planet_names_to_unlock = {
     "Tropical Resort": ItemNames.tropical_resort_unlock,

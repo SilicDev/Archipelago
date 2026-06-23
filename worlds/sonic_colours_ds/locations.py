@@ -9,6 +9,7 @@ from .options import Goal
 class SonicColoursDSLocation(Location):
     game: str = "Sonic Colours (DS)"
 
+
 tutorial_clear_table = {
     LocationNames.movement_tutorial: 1,
     LocationNames.white_wisp_tutorial: 2,
@@ -18,6 +19,7 @@ tutorial_clear_table = {
     LocationNames.cyan_wisp_tutorial: 6,
     LocationNames.violet_wisp_tutorial: 7,
 }
+
 
 level_clear_table = {
     LocationNames.tropical_resort_act_1: 10,
@@ -71,6 +73,7 @@ level_clear_table = {
     LocationNames.terminal_velocity_chase: 70,
     LocationNames.nega_wisp_armor: 80
 }
+
 
 red_rings_table = {
     LocationNames.tropical_resort_act_1_red_ring_1: 100,
@@ -188,6 +191,7 @@ red_rings_table = {
     LocationNames.asteroid_coaster_mission_3_red_ring_2: 195,
 }
 
+
 special_stage_table = {
     LocationNames.special_stage_1: 200,
     LocationNames.special_stage_2: 201,
@@ -198,6 +202,7 @@ special_stage_table = {
     LocationNames.special_stage_7: 206,
 }
 
+
 location_table = {
     **tutorial_clear_table,
     **level_clear_table,
@@ -205,9 +210,11 @@ location_table = {
     **special_stage_table,
 }
 
+
 menu_locations = {
     LocationNames.special_stage_7,
 }
+
 
 tropical_resort_region_locations = {
     LocationNames.movement_tutorial,
@@ -243,6 +250,7 @@ tropical_resort_region_locations = {
     LocationNames.special_stage_1,
 }
 
+
 sweet_mountain_region_locations = {
     LocationNames.red_wisp_tutorial,
 
@@ -275,6 +283,7 @@ sweet_mountain_region_locations = {
     LocationNames.sweet_mountain_boss,
     LocationNames.special_stage_2,
 }
+
 
 starlight_carnival_region_locations = {
     LocationNames.orange_wisp_tutorial,
@@ -309,6 +318,7 @@ starlight_carnival_region_locations = {
     LocationNames.special_stage_3,
 }
 
+
 planet_wisp_region_locations = {
     LocationNames.yellow_wisp_tutorial,
 
@@ -341,6 +351,7 @@ planet_wisp_region_locations = {
     LocationNames.planet_wisp_boss,
     LocationNames.special_stage_4,
 }
+
 
 aquarium_park_region_locations = {
     LocationNames.cyan_wisp_tutorial,
@@ -375,6 +386,7 @@ aquarium_park_region_locations = {
     LocationNames.special_stage_5,
 }
 
+
 asteroid_coaster_region_locations = {
     LocationNames.violet_wisp_tutorial,
 
@@ -408,10 +420,12 @@ asteroid_coaster_region_locations = {
     LocationNames.special_stage_6,
 }
 
+
 terminal_velocity_region_locations = {
     LocationNames.terminal_velocity_chase,
     LocationNames.nega_wisp_armor,
 }
+
 
 planet_boss_locations = {
     LocationNames.tropical_resort_boss,
@@ -421,6 +435,7 @@ planet_boss_locations = {
     LocationNames.aquarium_park_boss,
     LocationNames.asteroid_coaster_boss,
 }
+
 
 def setup_locations(world: World, player: int):
     locations = {}

@@ -6,6 +6,7 @@ yellow_wisp_tutorial = "Yellow Drill Tutorial"
 cyan_wisp_tutorial = "Cyan Laser Tutorial"
 violet_wisp_tutorial = "Violet Void Tutorial"
 
+
 tropical_resort_act_1 = "Tropical Resort Act 1"
 tropical_resort_act_1_red_ring_1 = "Tropical Resort Act 1 - Red Star Ring 1"
 tropical_resort_act_1_red_ring_2 = "Tropical Resort Act 1 - Red Star Ring 2"
@@ -33,6 +34,7 @@ tropical_resort_mission_3_red_ring_1 = "Tropical Resort Mission 3 - Red Star Rin
 tropical_resort_mission_3_red_ring_2 = "Tropical Resort Mission 3 - Red Star Ring 2"
 
 tropical_resort_boss = "Tropical Resort Boss (Globotron)"
+
 
 sweet_mountain_act_1 = "Sweet Mountain Act 1"
 sweet_mountain_act_1_red_ring_1 = "Sweet Mountain Act 1 - Red Star Ring 1"
@@ -62,6 +64,7 @@ sweet_mountain_mission_3_red_ring_2 = "Sweet Mountain Mission 3 - Red Star Ring 
 
 sweet_mountain_boss = "Sweet Mountain Boss (Captain Jelly)"
 
+
 starlight_carnival_act_1 = "Starlight Carnival Act 1"
 starlight_carnival_act_1_red_ring_1 = "Starlight Carnival Act 1 - Red Star Ring 1"
 starlight_carnival_act_1_red_ring_2 = "Starlight Carnival Act 1 - Red Star Ring 2"
@@ -89,6 +92,7 @@ starlight_carnival_mission_3_red_ring_1 = "Starlight Carnival Mission 3 - Red St
 starlight_carnival_mission_3_red_ring_2 = "Starlight Carnival Mission 3 - Red Star Ring 2"
 
 starlight_carnival_boss = "Starlight Carnival Boss (Frigate Orcan)"
+
 
 planet_wisp_act_1 = "Planet Wisp Act 1"
 planet_wisp_act_1_red_ring_1 = "Planet Wisp Act 1 - Red Star Ring 1"
@@ -118,6 +122,7 @@ planet_wisp_mission_3_red_ring_2 = "Planet Wisp Mission 3 - Red Star Ring 2"
 
 planet_wisp_boss = "Planet Wisp Boss (Drillinator)"
 
+
 aquarium_park_act_1 = "Aquarium Park Act 1"
 aquarium_park_act_1_red_ring_1 = "Aquarium Park Act 1 - Red Star Ring 1"
 aquarium_park_act_1_red_ring_2 = "Aquarium Park Act 1 - Red Star Ring 2"
@@ -145,6 +150,7 @@ aquarium_park_mission_3_red_ring_1 = "Aquarium Park Mission 3 - Red Star Ring 1"
 aquarium_park_mission_3_red_ring_2 = "Aquarium Park Mission 3 - Red Star Ring 2"
 
 aquarium_park_boss = "Aquarium Park Boss (Admiral Jelly)"
+
 
 asteroid_coaster_act_1 = "Asteroid Coaster Act 1"
 asteroid_coaster_act_1_red_ring_1 = "Asteroid Coaster Act 1 - Red Star Ring 1"
@@ -174,9 +180,11 @@ asteroid_coaster_mission_3_red_ring_2 = "Asteroid Coaster Mission 3 - Red Star R
 
 asteroid_coaster_boss = "Asteroid Coaster Boss (Frigate Skullian)"
 
+
 terminal_velocity_chase = "Terminal Velocity - Chase"
 
 nega_wisp_armor = "Nega-Wisp Armor"
+
 
 special_stage_1 = "Special Stage 1"
 special_stage_2 = "Special Stage 2"

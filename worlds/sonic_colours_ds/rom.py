@@ -8,10 +8,12 @@ from worlds.Files import APProcedurePatch, APTokenMixin, APTokenTypes
 if TYPE_CHECKING:
     from . import SonicColoursDSWorld
 
+
 EU_HASH = "406514E483EE092A89F4298F59FD53A9"
 US_HASH = "1996db2bdd78f30082ac003c1bc14a9b"
 ROM_NAME = b"SONICCOLORS\0"
 PATCHED_NAME = b"SONICCLR:AP\0"
+
 
 class SonicColoursDSProcedurePatch(APProcedurePatch, APTokenMixin):
     game = "Sonic Colours (DS)"
@@ -23,6 +25,7 @@ class SonicColoursDSProcedurePatch(APProcedurePatch, APTokenMixin):
         ("apply_bsdiff4", ["base_patch.bsdiff4"]),
         ("apply_tokens", ["token_data.bin"])
     ]
+
 
     @classmethod
     def get_source_data(cls) -> bytes:
