@@ -33,10 +33,10 @@ upgraded_hanamaru_rule = Has(ItemNames.hanamaru_upgrade) & hanamaru_rule
 upgraded_ruby_rule = Has(ItemNames.ruby_upgrade) & ruby_rule
 
 chika_block_rule = chika_rule | upgraded_ruby_rule
-ignore_projectile_rule = ruby_rule | upgraded_you_rule | upgraded_mari_rule | upgraded_riko_rule
+ignore_projectile_rule = ruby_rule | upgraded_you_rule | mari_rule | upgraded_riko_rule | Has(ItemNames.mistilteinn)
 you_skip_rule = Filtered(you_rule, options=you_enabled_filter, filtered_resolution=False)
 
-big_weapon_rule = HasAny(ItemNames.threaded_blade, ItemNames.shamrock, ItemNames.demon_slayer, ItemNames.claiomh_solais)
+whip_weapon_rule = HasAny(ItemNames.threaded_blade, ItemNames.shamrock, ItemNames.demon_slayer, ItemNames.claiomh_solais)
 boss_token_rule = Has(ItemNames.boss_token, 8)
 
 def set_rules(world: World) -> None:
@@ -100,7 +100,7 @@ def set_chest_rules(world: World) -> None:
     world.set_rule(world.get_location(LocationNames.sunken_volcano_next_to_first_save_room_chest), gloves_rule)
     world.set_rule(world.get_location(LocationNames.soarshoes_obligatory_issue_room_chest), soarshoes_rule)
     world.set_rule(world.get_location(LocationNames.tonosamas_parts_room_chest),
-                   (big_weapon_rule | dia_rule | upgraded_hanamaru_rule | mari_rule))
+                   (whip_weapon_rule | dia_rule | upgraded_hanamaru_rule | mari_rule))
 
     # Shipwreck
     world.set_rule(world.get_location(LocationNames.final_guard_room_chest), you_rule)

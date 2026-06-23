@@ -13,6 +13,7 @@ from Options import (
     PerGameCommonOptions,
     StartInventoryPool,
     Toggle,
+    Range
 )
 
 
@@ -80,6 +81,39 @@ class Recipesanity(Toggle):
     display_name = "Recipesanity"
 
 
+class MaxConsumableIngredientCount(Range):
+    """
+    If `recipesanity` is enabled, controlls how many of a given consumable can be required for
+    a single ingredient.
+    """
+    range_start = 1
+    range_end = 20
+    default = 3
+    display_name = "Max Consumable Ingredient Count"
+
+
+class MaxEnemyIngredientCount(Range):
+    """
+    If `recipesanity` is enabled, controlls how many of a given enemy material can be required for
+    a single ingredient.
+    """
+    range_start = 1
+    range_end = 20
+    default = 3
+    display_name = "Max Enemy Material Ingredient Count"
+
+
+class MaxBreakableIngredientCount(Range):
+    """
+    If `recipesanity` is enabled, controlls how many of a given breakable material can be required for
+    a single ingredient.
+    """
+    range_start = 1
+    range_end = 20
+    default = 5
+    display_name = "Max Breakable Material Ingredient Count"
+
+
 class DeathLinkGroup(FreeText):
     """Death Link only applies to players with an identical Group name.
     Games that don't support the Group option count as having an empty group name."""
@@ -103,8 +137,14 @@ yohane_deepblue_option_groups = [
     OptionGroup("Logic Customization", [
         LogicDifficulty,
         EarlyChikaBlockMoved,
-        EnableYouSkips
-    ])
+        EnableYouSkips,
+    ]),
+    OptionGroup("Recipesanity", [
+        Recipesanity,
+        MaxConsumableIngredientCount,
+        MaxEnemyIngredientCount,
+        MaxBreakableIngredientCount,
+    ]),
 ]
 
 
@@ -130,7 +170,11 @@ class YohaneDeepblueOptions(PerGameCommonOptions, DeathLinkGroupMixin, DamageLin
     progressive_character_unlocks: ProgressiveCharacterUnlocks
     upgrade_hints: UpgradeHints
     random_starting_weapon: RandomStartingWeapon
+
     recipesanity: Recipesanity
+    max_consumable_ingredient_count: MaxConsumableIngredientCount
+    max_enemy_ingredient_count: MaxEnemyIngredientCount
+    max_breakable_ingredient_count: MaxBreakableIngredientCount
 
     logic_difficulty: LogicDifficulty
     early_chika_blocks_moved: EarlyChikaBlockMoved

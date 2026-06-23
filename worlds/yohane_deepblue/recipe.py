@@ -105,14 +105,14 @@ class RecipeList:
             return Ingredient(item, count)
         if rand < 0.2:
             item = world.random.choice(consumable_ingredients)
-            count = self._random_amount(world, 1, 9)
+            count = self._random_amount(world, 1, world.options.max_consumable_ingredient_count.value)
             return Ingredient(item, count)
-        if rand < 0.5:
+        if rand < 0.6:
             item = world.random.choice(list(enemy_material_table.keys()))
-            count = self._random_amount(world, 1, 9)
+            count = self._random_amount(world, 1, world.options.max_enemy_ingredient_count.value)
             return Ingredient(item, count)
         item = world.random.choice(list(breakable_material_table.keys()))
-        count = self._random_amount(world, 1, 15, 5)
+        count = self._random_amount(world, 1, world.options.max_breakable_ingredient_count.value, 5)
         return Ingredient(item, count)
 
     def _random_amount(self, world: World, min: int, max: int, p: int = 2) -> int:
@@ -144,6 +144,8 @@ class RecipeList:
                         rule |= CanReachRegion(region)
                 else:
                     rule |= CanReachRegion(r.region)
+                if len(r.weakness) != 0:
+                    rule &= Has(DataMaps.element_to_character_map[r.weakness])
             return rule
         return True_()
 

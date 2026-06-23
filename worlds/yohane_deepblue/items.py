@@ -66,7 +66,7 @@ enemy_material_table: dict[str, ItemData] = {
     ItemNames.violet_shell: ItemData(227, False),
     ItemNames.viridian_claw: ItemData(228, False),
     ItemNames.emperors_crown: ItemData(229, False),
-    ItemNames.compound_lens: ItemData(230, False),
+    #ItemNames.compound_lens: ItemData(230, False),
     ItemNames.squishy_hide: ItemData(231, False),
     ItemNames.freaky_tentacle: ItemData(232, False),
     #ItemNames.supreme_squid_ink: ItemData(233, False),
@@ -153,7 +153,6 @@ enemy_material_table: dict[str, ItemData] = {
     ItemNames.flamme_essence: ItemData(317, False),
     ItemNames.fulgur_essence: ItemData(318, False),
     #ItemNames.jellybooster: ItemData(319, False),
-    ItemNames.rusty_rod: ItemData(322, False),
 }
 
 rare_material_table: dict[str, ItemData] = {
@@ -163,6 +162,7 @@ rare_material_table: dict[str, ItemData] = {
     ItemNames.ripple_shell: ItemData(311, False),
     ItemNames.world_pinetree_lumber: ItemData(320, False),
     ItemNames.phantom_jewel: ItemData(321, False),
+    ItemNames.rusty_rod: ItemData(322, False),
     ItemNames.lunar_grindstone: ItemData(323, False),
     ItemNames.twinkling_stardust: ItemData(324, False, False, 2),
     ItemNames.lucent_matter: ItemData(325, False, False, 2),
@@ -204,7 +204,7 @@ consumables_table: dict[str, ItemData] = {
 weapons_table: dict[str, ItemData] = {
     ItemNames.crossbow: ItemData(601, False),
     ItemNames.burstbow: ItemData(602, False),
-    ItemNames.mistilteinn: ItemData(603, False),
+    ItemNames.mistilteinn: ItemData(603, True),
     ItemNames.tribow: ItemData(604, False),
     ItemNames.tres_perfora: ItemData(605, False),
     ItemNames.autobow: ItemData(606, False),
@@ -225,10 +225,10 @@ weapons_table: dict[str, ItemData] = {
     ItemNames.balmung: ItemData(621, False),
     ItemNames.katana: ItemData(622, False),
     ItemNames.gekisei: ItemData(623, False),
-    ItemNames.threaded_blade: ItemData(624, False),
-    ItemNames.shamrock: ItemData(625, False),
-    ItemNames.demon_slayer: ItemData(626, False),
-    ItemNames.claiomh_solais: ItemData(627, False),
+    ItemNames.threaded_blade: ItemData(624, True),
+    ItemNames.shamrock: ItemData(625, True),
+    ItemNames.demon_slayer: ItemData(626, True),
+    ItemNames.claiomh_solais: ItemData(627, True),
 }
 
 accessories_table: dict[str, ItemData] = {
