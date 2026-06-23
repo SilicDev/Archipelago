@@ -1,9 +1,10 @@
 from collections.abc import Callable
 
-from BaseClasses import CollectionState, Entrance, Region
+from BaseClasses import CollectionState, Entrance, EntranceType, Region
+from rule_builder.rules import Rule
 from worlds.AutoWorld import World
 
-from .data import ItemNames, LocationNames
+from .data import LocationNames
 from .locations import (
     SonicColoursDSLocation,
     aquarium_park_region_locations,
@@ -16,6 +17,15 @@ from .locations import (
     tropical_resort_region_locations,
 )
 from .options import Goal
+from .rules import (
+    aquarium_park_rule,
+    asteroid_coaster_rule,
+    planet_wisp_rule,
+    starlight_carnival_rule,
+    sweet_mountain_rule,
+    terminal_velocity_rule,
+    tropical_resort_rule,
+)
 
 
 def create_regions(world: World, active_locations: dict[str, int]) -> None:
@@ -50,21 +60,16 @@ def create_regions(world: World, active_locations: dict[str, int]) -> None:
         terminal_velocity_region,
     ]
 
+
 def connect_regions(world: World) -> None:
-    connect(world, "Menu", LocationNames.tropical_resort_region,
-            lambda state: state.has(ItemNames.tropical_resort_unlock, world.player))
-    connect(world, "Menu", LocationNames.sweet_mountain_region,
-            lambda state: state.has(ItemNames.sweet_mountain_unlock, world.player))
-    connect(world, "Menu", LocationNames.starlight_carnival_region,
-            lambda state: state.has(ItemNames.starlight_carnival_unlock, world.player))
-    connect(world, "Menu", LocationNames.planet_wisp_region,
-            lambda state: state.has(ItemNames.planet_wisp_unlock, world.player))
-    connect(world, "Menu", LocationNames.aquarium_park_region,
-            lambda state: state.has(ItemNames.aquarium_park_unlock, world.player))
-    connect(world, "Menu", LocationNames.asteroid_coaster_region,
-            lambda state: state.has(ItemNames.asteroid_coaster_unlock, world.player))
-    connect(world, "Menu", LocationNames.terminal_velocity_region,
-            lambda state: state.has(ItemNames.terminal_velocity_unlock, world.player))
+    connect(world, "Menu", LocationNames.tropical_resort_region, tropical_resort_rule)
+    connect(world, "Menu", LocationNames.sweet_mountain_region, sweet_mountain_rule)
+    connect(world, "Menu", LocationNames.starlight_carnival_region, starlight_carnival_rule)
+    connect(world, "Menu", LocationNames.planet_wisp_region, planet_wisp_rule)
+    connect(world, "Menu", LocationNames.aquarium_park_region, aquarium_park_rule)
+    connect(world, "Menu", LocationNames.asteroid_coaster_region, asteroid_coaster_rule)
+    connect(world, "Menu", LocationNames.terminal_velocity_region, terminal_velocity_rule)
+
 
 def create_region(world: World, name: str, active_locations: dict[str, int], location_set: set[str]) -> Region:
     region = Region(name, world.player, world.multiworld)
@@ -74,14 +79,24 @@ def create_region(world: World, name: str, active_locations: dict[str, int], loc
             region.locations.append(SonicColoursDSLocation(world.player, location, code, region))
     return region
 
-def connect(world: World, source: str, destination: str, rule: Callable[[CollectionState], bool] | None) -> None:
+
+def connect(world: World, source: str, destination: str, rule: Rule | Callable[[CollectionState], bool] | None,
+            one_way: bool = False, randomization_group: int = 0) -> None:
     source_region = world.multiworld.get_region(source, world.player)
     dest_region = world.multiworld.get_region(destination, world.player)
 
-    entrance = Entrance(world.player, destination, source_region)
+    entrance_name = source
+    randomization_type = EntranceType.ONE_WAY
+    if one_way:
+        entrance_name += " -> "
+    else:
+        randomization_type = EntranceType.TWO_WAY
+        entrance_name += " <-> "
+    entrance_name += destination
+    entrance = Entrance(world.player, entrance_name, source_region, randomization_group, randomization_type)
 
-    if rule:
-        entrance.access_rule = rule
+    if rule is not None:
+        world.set_rule(entrance, rule)
 
     source_region.exits.append(entrance)
     entrance.connect(dest_region)
