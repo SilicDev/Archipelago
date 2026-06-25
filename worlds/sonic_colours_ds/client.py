@@ -491,10 +491,11 @@ class SonicColoursDSClient(BizHawkClient):
                     ], [guards["COUNTERS"]])
                 if read_result is not None:
                     life = int.from_bytes(read_result[0], "little")
-                    await bizhawk.write(
-                        ctx.bizhawk_ctx,
-                        [(SCDS_LIFE_COUNTER, (life + 1).to_bytes(2, "little"), "Main RAM")]
-                    )
+                    if life < 99:
+                        await bizhawk.write(
+                            ctx.bizhawk_ctx,
+                            [(SCDS_LIFE_COUNTER, (life + 1).to_bytes(2, "little"), "Main RAM")]
+                        )
                     return
             else:
                 rings_added = DataMaps.item_to_rings[item]
