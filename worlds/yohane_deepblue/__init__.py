@@ -93,6 +93,8 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
             # recipes
             self.recipe_list.generate(self)
             pass
+        else:
+            self.recipe_list.generate_default(self)
         return super().generate_early()
 
     def create_regions(self) -> None:
@@ -121,7 +123,7 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
         itempool.extend([self.create_item(item) for item in unique_accessories_table
                          for _ in range(unique_accessories_table[item].quantity)])
 
-        if self.options.recipesanity == Toggle.option_true:
+        if self.options.craftsanity == Toggle.option_true:
             itempool.extend([self.create_item(item) for item in self.recipe_list.rare_materials
                              for _ in range(self.recipe_list.rare_materials[item])])
             itempool.extend([self.create_item(item) for item in weapons_table])
@@ -179,12 +181,13 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
             "enable_you_skips",
             "progressive_character_unlocks",
             "upgrade_hints",
-            "recipesanity"
+            "recipesanity",
+            "craftsanity"
         )
         upgrades = []
         for item in character_upgrade_table.keys():
             location = self.multiworld.find_item(item, self.player)
             upgrades.append((location.player, location.address))
         slot_data["upgrades"] = upgrades
-        slot_data["recipes"] = int.from_bytes(self.recipe_list.get_bytes(), "little")
+        slot_data["recipes"] = self.recipe_list.get_bytes().hex()
         return slot_data

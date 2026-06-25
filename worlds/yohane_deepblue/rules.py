@@ -33,7 +33,8 @@ upgraded_hanamaru_rule = Has(ItemNames.hanamaru_upgrade) & hanamaru_rule
 upgraded_ruby_rule = Has(ItemNames.ruby_upgrade) & ruby_rule
 
 chika_block_rule = chika_rule | upgraded_ruby_rule
-ignore_projectile_rule = ruby_rule | upgraded_you_rule | mari_rule | upgraded_riko_rule | Has(ItemNames.mistilteinn)
+ignore_projectile_rule = (ruby_rule | upgraded_you_rule | mari_rule | upgraded_riko_rule |
+                          HasAny(ItemNames.mistilteinn, ItemNames.carnwennan, ItemNames.spread_toss))
 you_skip_rule = Filtered(you_rule, options=you_enabled_filter, filtered_resolution=False)
 
 whip_weapon_rule = HasAny(ItemNames.threaded_blade, ItemNames.shamrock, ItemNames.demon_slayer, ItemNames.claiomh_solais)

@@ -213,6 +213,7 @@ class YohaneDeepblueContext(CommonContext):
 
     recipes: bytes
     recipesanity: bool = False
+    craftsanity: bool = False
 
     debug_log = False
 
@@ -646,9 +647,10 @@ class YohaneDeepblueContext(CommonContext):
             self.damagelink_enabled = self.slot_data.get("damage_link", False)
             self.damage_link_group = self.slot_data.get("damage_link_group", "")
             self.recipesanity = self.slot_data.get("recipesanity", False)
-            self.recipes = int(self.slot_data.get("recipes", 0)).to_bytes(93*12, "little")
+            self.craftsanity = self.slot_data.get("craftsanity", False)
+            self.recipes = bytes.fromhex(self.slot_data.get("recipes", ""))
             location_scouts = []
-            if self.recipesanity:
+            if self.craftsanity:
                 location_scouts.extend(set(range(701, 794)))
             if len(location_scouts) != 0:
                 Utils.async_start(self.send_msgs([{
@@ -812,6 +814,16 @@ class YohaneDeepblueContext(CommonContext):
 
     def patch_game(self) -> None:
         if self.game_process is not None:
+            #with open("./worlds/yohane_deepblue/test/recipe_dump.bin", "w") as f:
+                #recipe_offset = self.game_process.base_address + LAST_RECIPE
+                #for i in range(93):
+                    #result = self.game_process.read_ushort(recipe_offset + (i+1)*0x30 + 0x8)
+                    #f.write(f"{result}\n")
+                    #for j in range(4):
+                        #id = self.game_process.read_ushort(recipe_offset + (i+1)*0x30 + 0x10 + j*8)
+                        #count = self.game_process.read_ushort(recipe_offset + (i+1)*0x30 + 0x14 + j*8)
+                        #f.write(f"{id}\t{count}\n")
+                    #f.write("\n")
             self.game_process.write_bytes(self.game_process.base_address + RECIPE_PATCH_LOCATION,
                                           RECIPE_PATCH, len(RECIPE_PATCH))
             self.game_process.write_bytes(self.game_process.base_address + RECIPE_END_PATCH_LOCATION,
@@ -821,9 +833,10 @@ class YohaneDeepblueContext(CommonContext):
             if self.recipesanity:
                 recipe_offset = self.game_process.base_address + LAST_RECIPE
                 for i in range(93):
-                    ingredients = struct.unpack_from("<hbhbhbhb", self.recipes, i*12)
+                    ingredients = struct.unpack_from("<hhhh", self.recipes, i*8)
                     for j in range(len(ingredients)):
-                        self.game_process.write_uint(recipe_offset + (i+1)*0x30 + 0x10 + j*4, ingredients[j])
+                        ingredient = (ingredients[j] & 0x3FF) | ((ingredients[j] & 0xFC00) << (6 + 16))
+                        self.game_process.write_ulonglong(recipe_offset + (i+1)*0x30 + 0x10 + j*8, ingredient)
 
 
     def get_base_address(self, base_offset: int) -> int:

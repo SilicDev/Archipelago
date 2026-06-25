@@ -72,9 +72,18 @@ class RandomStartingWeapon(Toggle):
     display_name = "Random Starting Weapon"
 
 
+class Craftsanity(Toggle):
+    """
+    If `true` randomizes crafting results and adds their normal results to the item pool.
+
+    WARNING: this setting has no logic yet and may result in unbeatable seed.
+    """
+    display_name = "Craftsanity"
+
+
 class Recipesanity(Toggle):
     """
-    If `true` randomizes recipes and adds their normal results to the item pool.
+    If `true` randomizes crafting recipes.
 
     WARNING: this setting has no logic yet and may result in unbeatable seed.
     """
@@ -138,6 +147,7 @@ yohane_deepblue_option_groups = [
         LogicDifficulty,
         EarlyChikaBlockMoved,
         EnableYouSkips,
+        Craftsanity,
     ]),
     OptionGroup("Recipesanity", [
         Recipesanity,
@@ -170,6 +180,7 @@ class YohaneDeepblueOptions(PerGameCommonOptions, DeathLinkGroupMixin, DamageLin
     progressive_character_unlocks: ProgressiveCharacterUnlocks
     upgrade_hints: UpgradeHints
     random_starting_weapon: RandomStartingWeapon
+    craftsanity: Craftsanity
 
     recipesanity: Recipesanity
     max_consumable_ingredient_count: MaxConsumableIngredientCount
