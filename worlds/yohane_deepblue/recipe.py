@@ -72,9 +72,9 @@ consumable_ingredients.remove(ItemNames.musical_score)
 
 
 vanilla_recipes = {}
-recipe_data = pkgutil.get_data(__name__, "data/recipe_dump.bin")
+recipe_data = pkgutil.get_data(__name__, "data/recipe_dump.txt")
 if recipe_data is None:
-    raise FileNotFoundError("Couldn't find 'data/recipe_dump.bin'")
+    raise FileNotFoundError("Couldn't find 'data/recipe_dump.txt'")
 text = recipe_data.decode("utf-8")
 recipes = text.split("\n\n")
 for r in recipes:
