@@ -507,21 +507,22 @@ class SonicColoursDSClient(BizHawkClient):
                     ], [guards["COUNTERS"]])
                 if read_result is not None:
                     rings = int.from_bytes(read_result[0], "little")
-                    total_rings = int.from_bytes(read_result[1], "little")
-                    await bizhawk.guarded_write(
-                        ctx.bizhawk_ctx,
-                        [
-                            (
-                                counters + SCDS_COUNTER_RINGS_OFFSET,
-                                (rings + rings_added).to_bytes(2, "little"),
-                                "Main RAM"),
-                            (
-                                counters + SCDS_COUNTER_TOTAL_RINGS_OFFSET,
-                                (total_rings + rings_added).to_bytes(2, "little"),
-                                "Main RAM"
-                            )
-                        ], [guards["COUNTERS"]])
-                    await bizhawk.display_message(ctx.bizhawk_ctx, f"You received {item}")
+                    if rings < 1000 - rings_added:
+                        total_rings = int.from_bytes(read_result[1], "little")
+                        await bizhawk.guarded_write(
+                            ctx.bizhawk_ctx,
+                            [
+                                (
+                                    counters + SCDS_COUNTER_RINGS_OFFSET,
+                                    (rings + rings_added).to_bytes(2, "little"),
+                                    "Main RAM"),
+                                (
+                                    counters + SCDS_COUNTER_TOTAL_RINGS_OFFSET,
+                                    (total_rings + rings_added).to_bytes(2, "little"),
+                                    "Main RAM"
+                                )
+                            ], [guards["COUNTERS"]])
+                        await bizhawk.display_message(ctx.bizhawk_ctx, f"You received {item}")
                     return
 
             # failed to activate, requeue it
