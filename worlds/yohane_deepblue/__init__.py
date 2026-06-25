@@ -13,6 +13,7 @@ from .data import ItemNames, LocationNames
 from .items import (
     YohaneDeepblueItem,
     accessories_table,
+    accessories_used_in_crafting_set,
     character_unlock_table,
     character_upgrade_table,
     consumables_table,
@@ -91,10 +92,13 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
     def generate_early(self) -> None:
         if self.options.recipesanity == Toggle.option_true:
             # recipes
-            self.recipe_list.generate(self)
+            self.recipe_list.generate(self.random,
+                                      self.options.max_consumable_ingredient_count.value,
+                                      self.options.max_enemy_ingredient_count.value,
+                                      self.options.max_breakable_ingredient_count.value)
             pass
         else:
-            self.recipe_list.generate_default(self)
+            self.recipe_list.generate_default()
         return super().generate_early()
 
     def create_regions(self) -> None:
@@ -123,15 +127,20 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
         itempool.extend([self.create_item(item) for item in unique_accessories_table
                          for _ in range(unique_accessories_table[item].quantity)])
 
-        if self.options.craftsanity == Toggle.option_true:
+        if self.options.recipesanity == Toggle.option_true:
             itempool.extend([self.create_item(item) for item in self.recipe_list.rare_materials
                              for _ in range(self.recipe_list.rare_materials[item])])
-            itempool.extend([self.create_item(item) for item in weapons_table])
-            accessories = sorted(set(accessories_table.keys()).difference(crafting_accessories_set))
-            itempool.extend([self.create_item(item) for item in accessories])
         else:
             itempool.extend([self.create_item(item) for item in rare_material_table
                             for _ in range(rare_material_table[item].quantity)])
+
+        if self.options.craftsanity == Toggle.option_true:
+            itempool.extend([self.create_item(item) for item in weapons_table])
+            accessories = sorted(set(accessories_table.keys()).difference(crafting_accessories_set))
+            itempool.extend([self.create_item(item) for item in accessories])
+            if self.options.recipesanity == Toggle.option_false:
+                itempool.extend([self.create_item(item) for item in self.recipe_list.accessories
+                                for _ in range(self.recipe_list.accessories[item])])
 
         if self.options.progressive_character_unlocks == Toggle.option_true:
             itempool.extend([self.create_item(item) for item in progressive_character_table
@@ -157,7 +166,12 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
         elif data.trap:
             classification = ItemClassification.trap
         elif name in rare_material_table.keys():
-            if self.options.recipesanity:
+            if self.options.craftsanity == Toggle.option_true:
+                classification = ItemClassification.progression
+            else:
+                classification = ItemClassification.useful
+        elif name in accessories_used_in_crafting_set:
+            if self.options.craftsanity == Toggle.option_true and self.options.recipesanity == Toggle.option_false:
                 classification = ItemClassification.progression
             else:
                 classification = ItemClassification.useful

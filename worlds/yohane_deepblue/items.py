@@ -367,7 +367,17 @@ crafting_accessories_set = {
     ItemNames.gold_threaded_cape,
     ItemNames.fortune_tellers_veil,
     ItemNames.fallen_angels_cloak_bad,
-    ItemNames.tattered_cloth,
+    ItemNames.tattered_cloth
+}
+
+accessories_used_in_crafting_set = {
+    ItemNames.silk_cape,
+    ItemNames.gold_threaded_cape,
+    ItemNames.fortune_tellers_veil,
+    ItemNames.fallen_angels_cloak_bad,
+    ItemNames.bunny_earring,
+    ItemNames.clover_earring,
+    ItemNames.tattered_cloth
 }
 
 valid_crafting_results = {

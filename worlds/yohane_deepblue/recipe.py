@@ -3,10 +3,11 @@ import struct
 import typing
 from dataclasses import dataclass
 from functools import cmp_to_key
+from random import Random
 
 from Options import Toggle
+from rule_builder.options import OptionFilter
 from rule_builder.rules import CanReachRegion, Has, Rule, True_
-from worlds.AutoWorld import World
 
 from .data import DataMaps, ItemNames, LocationNames
 from .items import (
@@ -20,6 +21,7 @@ from .items import (
     stackables_set,
 )
 from .locations import region_groups
+from .options import Recipesanity
 
 
 class RecipeStruct(ctypes.Structure):
@@ -97,33 +99,34 @@ class RecipeList:
     def __init__(self) -> None:
         self.recipes: list[Recipe] = []
         self.rare_materials: dict[str, int] = {}
+        self.accessories: dict[str, int] = {} # vanilla only
 
-    def generate(self, world: World) -> None:
+    def generate(self, random: Random, max_consumable: int, max_enemy: int, max_breakable: int) -> None:
         for _ in range(93):
-            ingredient1 = self._select_ingredient(world)
-            ingredient2 = self._select_ingredient(world)
+            ingredient1 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
+            ingredient2 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
             while ingredient2.item_name == ingredient1.item_name:
-                ingredient2 = self._select_ingredient(world)
+                ingredient2 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
             ingredient3 = Ingredient("", 0)
             ingredient4 = Ingredient("", 0)
-            rand = world.random.random()
+            rand = random.random()
             if rand < 0.5:
-                ingredient3 = self._select_ingredient(world)
+                ingredient3 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
                 while ingredient3.item_name in [ingredient1.item_name, ingredient2.item_name]:
-                    ingredient3 = self._select_ingredient(world)
+                    ingredient3 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
             if rand < 0.25:
-                ingredient4 = self._select_ingredient(world)
+                ingredient4 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
                 while ingredient4.item_name in [ingredient1.item_name, ingredient2.item_name, ingredient3.item_name]:
-                    ingredient4 = self._select_ingredient(world)
+                    ingredient4 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
             ingredients = sorted([ingredient1, ingredient2, ingredient3, ingredient4], key=_sort_ingredients)
-            self._count_rare_materials(*ingredients)
-            access_rule = self._get_ingredients_rule(world, *ingredients)
+            self._count_materials(*ingredients)
+            access_rule = self._get_ingredients_rule(*ingredients)
             self.recipes.append(Recipe(*ingredients, access_rule=access_rule))
         pass
 
-    def generate_default(self, world: World) -> None:
+    def generate_default(self) -> None:
         for i in range(93):
-            recipes = list(vanilla_recipes)
+            recipes = list(vanilla_recipes.values())
             if i < len(recipes):
                 vanilla_recipe = recipes[i]
                 ingredient1 = vanilla_recipe[0]
@@ -136,8 +139,8 @@ class RecipeList:
                     ingredient3 = vanilla_recipe[2]
                 if len(vanilla_recipe) > 3:
                     ingredient4 = vanilla_recipe[3]
-                self._count_rare_materials(ingredient1, ingredient2, ingredient3, ingredient4)
-                access_rule = self._get_ingredients_rule(world, ingredient1, ingredient2, ingredient3, ingredient4)
+                self._count_materials(ingredient1, ingredient2, ingredient3, ingredient4)
+                access_rule = self._get_ingredients_rule(ingredient1, ingredient2, ingredient3, ingredient4)
                 self.recipes.append(Recipe(ingredient1, ingredient2, ingredient3, ingredient4, access_rule))
             pass
         pass
@@ -148,39 +151,46 @@ class RecipeList:
             out.extend(recipe.pack())
         return bytes(out)
 
-    def _select_ingredient(self, world: World) -> Ingredient:
-        rand = world.random.random()
+    def _select_ingredient(self, random: Random, max_consumable: int, max_enemy: int, max_breakable: int) -> Ingredient:
+        rand = random.random()
         if rand < 0.05:
-            item = world.random.choice(list(rare_material_table.keys()))
-            count = self._random_amount(world, 1, 3)
+            item = random.choice(list(rare_material_table.keys()))
+            count = self._random_amount(random, 1, 3)
             return Ingredient(item, count)
         if rand < 0.2:
-            item = world.random.choice(consumable_ingredients)
-            count = self._random_amount(world, 1, world.options.max_consumable_ingredient_count.value)
+            item = random.choice(consumable_ingredients)
+            count = self._random_amount(random, 1, max_consumable)
             return Ingredient(item, count)
         if rand < 0.6:
-            item = world.random.choice(list(enemy_material_table.keys()))
-            count = self._random_amount(world, 1, world.options.max_enemy_ingredient_count.value)
+            item = random.choice(list(enemy_material_table.keys()))
+            count = self._random_amount(random, 1, max_enemy)
             return Ingredient(item, count)
-        item = world.random.choice(list(breakable_material_table.keys()))
-        count = self._random_amount(world, 1, world.options.max_breakable_ingredient_count.value, 5)
+        item = random.choice(list(breakable_material_table.keys()))
+        count = self._random_amount(random, 1, max_breakable, 5)
         return Ingredient(item, count)
 
-    def _random_amount(self, world: World, min: int, max: int, p: int = 2) -> int:
-        return round(min + (max - min) * pow(world.random.random(), p))
+    def _random_amount(self, random: Random, min: int, max: int, p: int = 2) -> int:
+        return round(min + (max - min) * pow(random.random(), p))
 
-    def _count_rare_materials(self, *ingredients: Ingredient|None) -> Rule:
+    def _count_materials(self, *ingredients: Ingredient|None) -> Rule:
         rule = True_()
         for ingredient in ingredients:
-            if ingredient is not None and ingredient.item_name in rare_material_table:
-                item = ingredient.item_name
-                if item not in self.rare_materials:
-                    self.rare_materials[item] = ingredient.amount
-                else:
-                    self.rare_materials[item] += ingredient.amount
+            if ingredient is not None:
+                if ingredient.item_name in rare_material_table:
+                    item = ingredient.item_name
+                    if item not in self.rare_materials:
+                        self.rare_materials[item] = ingredient.amount
+                    else:
+                        self.rare_materials[item] += ingredient.amount
+                if ingredient.item_name in accessories_table:
+                    item = ingredient.item_name
+                    if item not in self.accessories:
+                        self.accessories[item] = ingredient.amount
+                    else:
+                        self.accessories[item] += ingredient.amount
         return rule
 
-    def _get_ingredient_rule(self, world: World, ingredient: Ingredient|None) -> Rule:
+    def _get_ingredient_rule(self, ingredient: Ingredient|None) -> Rule:
         if ingredient is None:
             return True_()
         if ingredient.item_name in rare_material_table:
@@ -199,13 +209,13 @@ class RecipeList:
                     rule &= Has(DataMaps.element_to_character_map[r.weakness])
             return rule
         if ingredient.item_name in accessories_table:
-            if world.options.recipesanity == Toggle.option_false:
-                return self._get_ingredients_rule(world, *DataMaps.vanilla_crafting_recipes[ingredient.item_name])
+            return Has(ingredient.item_name, ingredient.amount,
+                       options=[OptionFilter(Recipesanity, Toggle.option_false)], filtered_resolution=True)
             # pray
         return True_()
 
-    def _get_ingredients_rule(self, world: World, *ingredients: Ingredient|None) -> Rule:
+    def _get_ingredients_rule(self, *ingredients: Ingredient|None) -> Rule:
         rule = True_()
         for ingredient in ingredients:
-            rule &= self._get_ingredient_rule(world, ingredient)
+            rule &= self._get_ingredient_rule(ingredient)
         return rule
