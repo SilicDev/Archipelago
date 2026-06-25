@@ -20,5 +20,8 @@ class TestRecipeVanilla(TestCase):
         recipe_list: RecipeList = RecipeList()
         recipe_list.generate_default()
         #for key in recipe_list.rare_materials:
-        self.assertDictEqual(recipe_list.rare_materials, {key: rare_material_table[key].quantity for key in recipe_list.rare_materials})
-        self.assertDictEqual(recipe_list.accessories, {key: craft_accessories[key] for key in recipe_list.accessories})
+        rare_materials = {key: rare_material_table[key].quantity for key in rare_material_table}
+        self.assertEqual(len(recipe_list.rare_materials), len(rare_materials))
+        self.assertDictEqual({key: recipe_list.rare_materials[key] for key in rare_materials}, rare_materials)
+        self.assertEqual(len(recipe_list.accessories), len(craft_accessories))
+        self.assertDictEqual({key: recipe_list.accessories[key] for key in craft_accessories}, craft_accessories)
