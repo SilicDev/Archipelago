@@ -1,4 +1,5 @@
 import ctypes
+import pkgutil
 import struct
 import typing
 from dataclasses import dataclass
@@ -71,20 +72,22 @@ consumable_ingredients.remove(ItemNames.musical_score)
 
 
 vanilla_recipes = {}
-with open("./worlds/yohane_deepblue/data/recipe_dump.bin", "r") as f:
-    text = f.read()
-    recipes = text.split("\n\n")
-    for r in recipes:
-        parts = r.split("\n")
-        if len(parts) == 5:
-            key = lookup_id_to_name[int(parts[0])]
-            ingredients: list[Ingredient] = []
-            for i in range(1, len(parts)):
-                ingredient_parts = parts[i].split("\t")
-                id = int(ingredient_parts[0])
-                if id != 0:
-                    ingredients.append(Ingredient(lookup_id_to_name[id], int(ingredient_parts[1])))
-            vanilla_recipes[key] = ingredients
+recipe_data = pkgutil.get_data(__name__, "data/recipe_dump.bin")
+if recipe_data is None:
+    raise FileNotFoundError("Couldn't find 'data/recipe_dump.bin'")
+text = recipe_data.decode("utf-8")
+recipes = text.split("\n\n")
+for r in recipes:
+    parts = r.split("\n")
+    if len(parts) == 5:
+        key = lookup_id_to_name[int(parts[0])]
+        ingredients: list[Ingredient] = []
+        for i in range(1, len(parts)):
+            ingredient_parts = parts[i].split("\t")
+            id = int(ingredient_parts[0])
+            if id != 0:
+                ingredients.append(Ingredient(lookup_id_to_name[id], int(ingredient_parts[1])))
+        vanilla_recipes[key] = ingredients
 
 
 @cmp_to_key
