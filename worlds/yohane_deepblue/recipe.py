@@ -1,4 +1,5 @@
 import ctypes
+import os
 import pkgutil
 import struct
 import typing
@@ -79,9 +80,9 @@ recipe_data = pkgutil.get_data(__name__, "data/recipe_dump.txt")
 if recipe_data is None:
     raise FileNotFoundError("Couldn't find 'data/recipe_dump.txt'")
 text = recipe_data.decode("utf-8")
-recipes = text.split("\r\n\r\n")
+recipes = text.split(os.linesep + os.linesep)
 for r in recipes:
-    parts = r.split("\r\n")
+    parts = r.split(os.linesep)
     if len(parts) == 5:
         key = lookup_id_to_name[int(parts[0])]
         ingredients: list[Ingredient] = []
