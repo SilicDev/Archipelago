@@ -66,5 +66,5 @@ class TestRecipeRecipeSanity(TestCase):
                                      f"Empty ingredient should have count 0, was '{ingredient.amount}'")
                     empty_ingredients += 1
             self.assertLessEqual(empty_ingredients, 2,
-                                 "Expected at most 2 empty ingredients, got '{empty_ingredients}'")
+                                 f"Expected at most 2 empty ingredients, got '{empty_ingredients}'")
         pass
