@@ -89,16 +89,6 @@ class ConnectionStatus(enum.IntEnum):
 class YohaneDeepblueCommandProcessor(ClientCommandProcessor):
     ctx: "YohaneDeepblueContext"
 
-    def _cmd_kaboom(self) -> None:
-        """
-        Trigger a death.
-        """
-        self.ctx.on_deathlink({
-            "time": time.time(),
-            "source": self.ctx.player_names[self.ctx.slot],
-            "cause": ""
-        })
-
     def _cmd_debug(self) -> None:
         """
         Toggle debug logging.
@@ -220,7 +210,7 @@ class YohaneDeepblueContext(CommonContext):
     recipesanity: bool = False
     craftsanity: bool = False
 
-    debug_log = False
+    debug_log = not Utils.is_frozen()
 
     deathlink_enabled = False
     can_send_deathlink = False
@@ -273,6 +263,12 @@ class YohaneDeepblueContext(CommonContext):
                         await asyncio.sleep(1)
                         continue
 
+                    main_struct = self.get_base_address(MAIN_BASE_OFFSET)
+                    if main_struct == -1:
+                        logger.info("ERROR: Couldn't find main data struct!")
+                        await asyncio.sleep(1)
+                        continue
+
                     ingame_time = self.game_process.read_uint(flags_struct + OFFSET_INGAME_TIME)
                     if ingame_time == 0:
                         await asyncio.sleep(0.1)
@@ -321,12 +317,6 @@ class YohaneDeepblueContext(CommonContext):
                                 self.last_max_health = max_health
                         except Exception:
                             pass
-
-                    main_struct = self.get_base_address(MAIN_BASE_OFFSET)
-                    if main_struct == -1:
-                        logger.info("ERROR: Couldn't find main data struct!")
-                        await asyncio.sleep(1)
-                        continue
 
                     map_area = self.game_process.read_uchar(main_struct + MAP_AREA_OFFSET)
                     map_room = self.game_process.read_uchar(main_struct + MAP_ROOM_OFFSET)

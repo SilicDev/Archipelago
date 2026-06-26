@@ -6,7 +6,7 @@ import typing
 from BaseClasses import Item, ItemClassification, MultiWorld, Tutorial
 from Options import Toggle
 from rule_builder.cached_world import CachedRuleBuilderWorld
-from worlds.AutoWorld import WebWorld, World
+from worlds.AutoWorld import WebWorld
 from worlds.LauncherComponents import Component, Type, components, launch
 
 from .data import ItemNames, LocationNames
@@ -16,7 +16,6 @@ from .items import (
     accessories_used_in_crafting_set,
     character_unlock_table,
     character_upgrade_table,
-    consumables_table,
     crafting_accessories_set,
     event_table,
     item_groups,
