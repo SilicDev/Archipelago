@@ -66,6 +66,9 @@ class Recipe:
         struct.pack_into("<h", out, 6, self.ingredient4.pack())
         return out
 
+    def get_ingredients(self) -> list[Ingredient]:
+        return [self.ingredient1, self.ingredient2, self.ingredient3, self.ingredient4]
+
 recipe_ingredients = sorted(stackables_set)
 consumable_ingredients = list(consumables_table.keys())
 consumable_ingredients.remove(ItemNames.musical_score)
@@ -76,9 +79,9 @@ recipe_data = pkgutil.get_data(__name__, "data/recipe_dump.txt")
 if recipe_data is None:
     raise FileNotFoundError("Couldn't find 'data/recipe_dump.txt'")
 text = recipe_data.decode("utf-8")
-recipes = text.split("\n\n")
+recipes = text.split("\r\n\r\n")
 for r in recipes:
-    parts = r.split("\n")
+    parts = r.split("\r\n")
     if len(parts) == 5:
         key = lookup_id_to_name[int(parts[0])]
         ingredients: list[Ingredient] = []
@@ -93,9 +96,9 @@ for r in recipes:
 @cmp_to_key
 def _sort_ingredients(a: Ingredient, b: Ingredient) -> int:
     if len(a.item_name) == 0:
-        return -1
-    if len(b.item_name) == 0:
         return 1
+    if len(b.item_name) == 0:
+        return -1
     return item_table[a.item_name].code - item_table[b.item_name].code
 
 class RecipeList:
@@ -175,8 +178,7 @@ class RecipeList:
     def _random_amount(self, random: Random, min: int, max: int, p: int = 2) -> int:
         return round(min + (max - min) * pow(random.random(), p))
 
-    def _count_materials(self, *ingredients: Ingredient|None) -> Rule:
-        rule = True_()
+    def _count_materials(self, *ingredients: Ingredient|None) -> None:
         for ingredient in ingredients:
             if ingredient is not None:
                 if ingredient.item_name in rare_material_table:
@@ -191,7 +193,6 @@ class RecipeList:
                         self.accessories[item] = ingredient.amount
                     else:
                         self.accessories[item] += ingredient.amount
-        return rule
 
     def _get_ingredient_rule(self, ingredient: Ingredient|None) -> Rule:
         if ingredient is None:

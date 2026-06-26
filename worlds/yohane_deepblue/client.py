@@ -54,7 +54,8 @@ ITEM_STRUCT_SIZE = 0x18
 EQUIPPED_ABILITIES_FLAGS_OFFSET = 0x58560
 MAP_AREA_OFFSET = 0x585EC
 MAP_ROOM_OFFSET = 0x585EF
-MUSICAL_SCORES_INVENTORY_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item_table[ItemNames.musical_score].code)
+MUSICAL_SCORES_INVENTORY_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 419) # Musical Score
+RECIPE_CRAFTED_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 230) # Compound Lens (unused) 0x1590
 RECEIVED_ITEMS_COUNTER_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 233) # Supreme Squid Ink (Unused)
 STORED_MUSICAL_SCORE_COUNTER_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 237) # Dried Jellyfish (Unused)
 
@@ -73,10 +74,14 @@ MAX_DP_OFFSET = 0x34
 
 LAST_RECIPE = 0x1136634
 RECIPE_PATCH_LOCATION = 0x6a3b6c
-RECIPE_PATCH = b"\xe9\x63\xa6\x66\x00"
-RECIPE_END_PATCH_LOCATION = 0xd0e1cc
-RECIPE_END_PATCH = b"\x34\x66\x13\x41\x01\x00\x00\x00\x48\x8b\x44\x24\x38\x8b\x58\x2c\x48\x8b\x05\xbd\x13\x47\x00\x0f\xaf\x58\x04\x48\x03\x1d\xc2\x13\x47\x00\x4c\x8b\x05\xd7\xff\xff\xff\x90\x90\x90\x49\x89\x18\xe9\x87\x59\x99\xff"
-
+RECIPE_PATCH = b"\xe9\x97\xa6\x66\x00"
+RECIPE_END_PATCH_LOCATION = 0xd0e200
+#     Patch:          ------------------------------------------------------------------------------------------------
+RECIPE_END_PATCH = (b"\x34\x66\x13\x41\x01\x00\x00\x00\x48\x8b\x44\x24\x38\x8b\x58\x2c\x49\xc7\xc0\x18\x00\x00\x00\x48"
+                    b"\xc7\xc0\xe6\x00\x00\x00\x4c\x0f\xaf\xc0\x89\xd8\x83\xf8\x40\x7c\x07\x49\x83\xc0\x08\x83\xe8\x40"
+                    b"\x51\x88\xc1\xb8\x01\x00\x00\x00\x48\xd3\xe0\x49\x01\xf0\x49\x8b\x08\x48\x09\xc8\x49\x89\x00\x59"
+                    b"\x48\x8b\x05\x51\x13\x47\x00\x0f\xaf\x58\x04\x48\x03\x1d\x56\x13\x47\x00\x4c\x8b\x05\x9f\xff\xff"
+                    b"\xff\x49\x89\x18\xe9\x1e\x59\x99\xff")
 class ConnectionStatus(enum.IntEnum):
     NOT_CONNECTED = 1
     CONNECTED = 2
@@ -466,12 +471,16 @@ class YohaneDeepblueContext(CommonContext):
                             accessories_enabled &= (0xF8 | self.local_accessories_enabled)
                             self.game_process.write_uchar(addr, accessories_enabled)
 
-                    last_recipe = int(self.game_process.read_ulonglong(self.game_process.base_address + LAST_RECIPE))
-                    recipe = (last_recipe - (self.game_process.base_address + LAST_RECIPE)) / 0x30
-                    if round(recipe) == recipe and recipe <= 93 and recipe > 0:
-                        location = round(recipe) + 700
-                        if location not in self.checked_locations:
-                            self.queued_locations.append(location)
+                    #last_recipe = int(self.game_process.read_ulonglong(self.game_process.base_address + LAST_RECIPE))
+                    #recipe = (last_recipe - (self.game_process.base_address + LAST_RECIPE)) / 0x30
+                    #if round(recipe) == recipe and recipe <= 93 and recipe > 0:
+                        #location = round(recipe) + 700
+                        #if location not in self.checked_locations:
+                            #self.queued_locations.append(location)
+                    recipes = int.from_bytes(self.game_process.read_bytes(main_struct + RECIPE_CRAFTED_OFFSET, 12), "little")
+                    for i in range(93):
+                        if 1 << (i + 1) & recipes != 0:
+                            self.queued_locations.append(701+i)
 
                     while self.queued_locations:
                         location = self.queued_locations.pop(0)
@@ -510,7 +519,8 @@ class YohaneDeepblueContext(CommonContext):
                         if item.location in range(701, 800) and item.item < 1000:
                             if item_name == ItemNames.musical_score:
                                 self.stored_musical_scores += 1
-                            new_item = False
+
+                            new_item = False # local crafting, no real item
 
                         # receive item
                         if new_item:
@@ -586,12 +596,21 @@ class YohaneDeepblueContext(CommonContext):
                         elif location_name in DataMaps.character_rescue_flag_map.keys():
                             flag = DataMaps.character_rescue_flag_map[location_name]
                             game_progression_flags |= flag
-                            self.game_process.write_ushort(main_struct + GAME_PROGRESSION_FLAGS_OFFSET, 
+                            self.game_process.write_ushort(main_struct + GAME_PROGRESSION_FLAGS_OFFSET,
                                                            game_progression_flags)
                         elif location_name in DataMaps.boss_defeated_flag_map.keys():
                             flag = DataMaps.boss_defeated_flag_map[location_name]
                             boss_defeated_flags |= flag
                             self.game_process.write_uint(main_struct + BOSS_DEFEATED_FLAGS, boss_defeated_flags)
+                        elif new_remotely_cleared_location in range(701, 800):
+                            offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * new_remotely_cleared_location)
+                            self.game_process.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 1)
+                            self.game_process.write_uchar(main_struct + offset + ITEM_NEW_OFFSET, 0)
+                            self.game_process.write_ushort(main_struct + offset, 1 << 8 + 1)
+                            offset = main_struct + RECIPE_CRAFTED_OFFSET
+                            recipes = int.from_bytes(self.game_process.read_bytes(offset, 12), "little")
+                            recipes |= 1  << (new_remotely_cleared_location - 700)
+                            self.game_process.write_bytes(offset, recipes.to_bytes(12, "little"), 12)
                         self.locations_checked.add(new_remotely_cleared_location)
                         pass
 
