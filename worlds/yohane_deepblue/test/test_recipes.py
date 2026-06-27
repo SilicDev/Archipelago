@@ -5,7 +5,13 @@ from unittest import TestCase
 from test.param import classvar_matrix
 
 from ..data import ItemNames
-from ..items import rare_material_table, consumables_table, breakable_material_table, enemy_material_table, stackables_set
+from ..items import (
+    breakable_material_table,
+    consumables_table,
+    enemy_material_table,
+    rare_material_table,
+    stackables_set,
+)
 from ..recipe import RecipeList
 
 craft_accessories = {
