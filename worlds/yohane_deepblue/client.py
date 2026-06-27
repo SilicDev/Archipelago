@@ -883,7 +883,10 @@ async def main(args: Namespace) -> None:
 def _read_address(ctx: YohaneDeepblueContext, address: int) -> int:
     if not ctx.game_connected or ctx.game_process is None:
         raise Exception("Must be connected to the game!")
-    return int(ctx.game_process.read_ctype(address, ctypes.c_void_p()))
+    result = ctx.game_process.read_ctype(address, ctypes.c_void_p())
+    if result is None:
+        raise Exception("Must be connected to the game!")
+    return int(result)
 
 def _resolve_pointer(ctx: YohaneDeepblueContext, base_address: int, pointer: list[int]) -> int:
     if not ctx.game_connected or ctx.game_process is None:
