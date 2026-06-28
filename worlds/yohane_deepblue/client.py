@@ -82,9 +82,12 @@ RECIPE_END_PATCH = (b"\x34\x66\x13\x41\x01\x00\x00\x00\x48\x8b\x44\x24\x38\x8b\x
                     b"\x51\x88\xc1\xb8\x01\x00\x00\x00\x48\xd3\xe0\x49\x01\xf0\x49\x8b\x08\x48\x09\xc8\x49\x89\x00\x59"
                     b"\x48\x8b\x05\x51\x13\x47\x00\x0f\xaf\x58\x04\x48\x03\x1d\x56\x13\x47\x00\x4c\x8b\x05\x9f\xff\xff"
                     b"\xff\x49\x89\x18\xe9\x1e\x59\x99\xff")
+
+
 class ConnectionStatus(enum.IntEnum):
     NOT_CONNECTED = 1
     CONNECTED = 2
+
 
 class YohaneDeepblueCommandProcessor(ClientCommandProcessor):
     ctx: "YohaneDeepblueContext"
@@ -211,6 +214,7 @@ class YohaneDeepblueContext(CommonContext):
     craftsanity: bool = False
 
     debug_log = not Utils.is_frozen()
+    valid_slot = True
 
     deathlink_enabled = False
     can_send_deathlink = False
@@ -263,16 +267,17 @@ class YohaneDeepblueContext(CommonContext):
                         await asyncio.sleep(1)
                         continue
 
+                    ingame_time = int(self.game_process.read_uint(flags_struct + OFFSET_INGAME_TIME))
+                    if ingame_time <= 1000:
+                        await asyncio.sleep(0.1)
+                        continue
+
                     main_struct = self.get_base_address(MAIN_BASE_OFFSET)
                     if main_struct == -1:
                         logger.info("ERROR: Couldn't find main data struct!")
                         await asyncio.sleep(1)
                         continue
 
-                    ingame_time = self.game_process.read_uint(flags_struct + OFFSET_INGAME_TIME)
-                    if ingame_time == 0:
-                        await asyncio.sleep(0.1)
-                        continue
 
                     is_dead = self.game_process.read_uchar(flags_struct + OFFSET_IS_DEAD)
                     if self.deathlink_enabled:
@@ -282,58 +287,14 @@ class YohaneDeepblueContext(CommonContext):
                             await self.send_death()
                             self.can_send_deathlink = False
 
-                    if self.kernel32 is None:
-                        self.kernel32 = pymem.process.module_from_name(self.game_process.process_handle, "kernel32.dll")
-                    if self.kernel32 is not None:
-                        try:
-                            main_thread = self.game_process.main_thread
-                            for i in range(main_thread._query_teb().NtTib.StackBase - 8,
-                                           main_thread._query_teb().NtTib.StackLimit, -8):
-                                try:
-                                    value = int(self.game_process.read_ulonglong(i))
-                                    if (value > self.kernel32.lpBaseOfDll and
-                                            value < self.kernel32.lpBaseOfDll + self.kernel32.SizeOfImage):
-                                        self.threadstack0 = i
-                                        break
-                                except Exception:
-                                    pass
-                            if self.threadstack0 >= 0:
-                                self.yohane_pointer = _resolve_pointer(self, self.threadstack0, YOHANE_PTR)
-                        except Exception:
-                            #logger.info(e)
-                            pass
-                    if self.yohane_pointer >= 0:
-                        try:
-                            health = int(self.game_process.read_ulong(self.yohane_pointer + CURRENT_HP_OFFSET))
-                            max_health = int(self.game_process.read_ulong(self.yohane_pointer + MAX_HP_OFFSET))
-                            if self.damagelink_enabled:
-                                if (health < self.last_health and max_health == self.last_max_health and
-                                        self.can_send_damagelink):
-                                    await self.send_damage(self.last_health - health)
-                                    self.can_send_damagelink = False
-                                else:
-                                    self.can_send_damagelink = True
-                                self.last_health = health
-                                self.last_max_health = max_health
-                        except Exception:
-                            pass
+                    threadstack = self.get_threadstack0()
+                    if threadstack is not None:
+                        self.threadstack0 = threadstack
+                    await self.detect_damage(self.game_process)
 
-                    map_area = self.game_process.read_uchar(main_struct + MAP_AREA_OFFSET)
-                    map_room = self.game_process.read_uchar(main_struct + MAP_ROOM_OFFSET)
-                    if self.last_map_area != map_area or self.last_map_room != map_room:
-                        if self.debug_log:
-                            logger.info("Entering room %d in area %d", map_room, map_area)
-                        if self.last_map_area != map_area:
-                            await self.send_msgs([{ # Update package for trackers
-                                "cmd": "Bounce",
-                                "slots": [self.slot],
-                                "data": {
-                                    "type": "MapUpdate",
-                                    "mapId": map_area,
-                                },
-                            }])
-                        self.last_map_area = map_area
-                        self.last_map_room = map_room
+                    map_area = int(self.game_process.read_uchar(main_struct + MAP_AREA_OFFSET))
+                    map_room = int(self.game_process.read_uchar(main_struct + MAP_ROOM_OFFSET))
+                    await self.handle_map_update(map_area, map_room)
                     game_flags = int(self.game_process.read_uchar(main_struct + GAME_FLAGS_OFFSET))
                     in_parlor = game_flags & 0x8 != 0
                     if in_parlor != self.in_parlor:
@@ -359,28 +320,6 @@ class YohaneDeepblueContext(CommonContext):
                             self.local_received_items[ItemNames.boss_token] >= 8):
                         game_progression_flags |= 0x8000 # Spawns Infernal Altar cutscene
                     self.game_process.write_ushort(main_struct + GAME_PROGRESSION_FLAGS_OFFSET, game_progression_flags)
-                    self.game_process.write_ushort(main_struct + GAME_FLAGS_OFFSET, game_flags)
-
-                    character_quest_flags = int(self.game_process.read_uint(main_struct + CHARACTER_QUEST_FLAGS_OFFSET))
-                    for location in DataMaps.character_quest_flag_map:
-                        if location_table[location] in self.checked_locations:
-                            continue
-                        flag = DataMaps.character_quest_flag_map[location]
-                        if character_quest_flags & flag != 0 and self.hinted_quest_flags & flag == 0:
-                            self.hinted_quest_flags |= flag
-                            if UpgradeHints._option_vanilla in self.slot_data["upgrade_hints"]:
-                                await self.send_msgs([{"cmd": "CreateHints", "locations": [location_table[location]]}])
-                            if UpgradeHints._option_ap in self.slot_data["upgrade_hints"]:
-                                item = DataMaps.chest_data_map[location].vanilla_item
-                                if item not in self.local_received_items:
-                                    real_location = self.slot_data["upgrades"][item_table[item].code - 1]
-                                    if real_location[1] is not None:
-                                        await self.send_msgs([{
-                                            "cmd": "CreateHints",
-                                            "player": real_location[0],
-                                            "locations": [real_location[1]]
-                                        }])
-                    character_quest_flags &= 0xDB6DB6FF # Disable collection flags
 
                     boss_defeated_flags = int(self.game_process.read_uint(main_struct + BOSS_DEFEATED_FLAGS))
                     for location in DataMaps.boss_defeated_flag_map:
@@ -389,84 +328,14 @@ class YohaneDeepblueContext(CommonContext):
                         if boss_defeated_flags & DataMaps.boss_defeated_flag_map[location] != 0:
                             self.queued_locations.append(location_table[location])
 
-                    character_unlock_flags = int(self.game_process.read_uint(main_struct + CHARACTER_UNLOCK_FLAGS_OFFSET))
-                    character_unlock_flags &= 0xFFD5555F
-                    for item in DataMaps.character_item_flags_map:
-                        flag = DataMaps.character_item_flags_map[item]
-                        if item in self.local_received_items:
-                            character_unlock_flags |= flag
-                            if item in DataMaps.character_item_to_quest_map.keys():
-                                character_quest_flags |= DataMaps.character_item_to_quest_map[item]
-                        if character_unlock_flags & (flag << 1) != 0:
-                            upgrade = DataMaps.character_to_upgrade_map[item]
-                            if upgrade is not None:
-                                self.queued_locations.append(location_table[DataMaps.upgrade_item_to_quest_location_map[upgrade]])
+                    await self.handle_characters(self.game_process, main_struct)
 
-                    self.game_process.write_uint(main_struct + CHARACTER_UNLOCK_FLAGS_OFFSET, character_unlock_flags)
-                    self.game_process.write_uint(main_struct + CHARACTER_QUEST_FLAGS_OFFSET, character_quest_flags)
+                    self.handle_character_upgrades(self.game_process, main_struct, map_area, map_room)
 
-                    for item in character_upgrade_table.keys():
-                        item_data = character_upgrade_table[item]
-                        if item_data.code is not None: # events aren't real
-                            offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item_data.code)
-                            room = DataMaps.character_upgrade_to_area_room[item]
-                            if (item in self.local_received_items and
-                                (not (room[0] == map_area and map_room in room[1]) or
-                                    location_table[room[2]] in self.checked_locations)):
-                                self.game_process.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 1)
-                            else:
-                                self.game_process.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 0)
+                    self.handle_unique_accessories(self.game_process, main_struct)
 
-                    for item in unique_accessories_table.keys():
-                        item_data = unique_accessories_table[item]
-                        if item_data.code is not None: # events aren't real
-                            offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item_data.code)
-                            addr = main_struct + offset + ITEM_COUNT_OFFSET
-                            if item in self.local_received_items:
-                                self.game_process.write_uchar(addr, 1)
-                                if item == ItemNames.extra_accessory_slot:
-                                    if self.local_received_items[item] > 1:
-                                        self.game_process.write_uchar(addr + ITEM_STRUCT_SIZE, 1)
-                                    else:
-                                        self.game_process.write_uchar(addr + ITEM_STRUCT_SIZE, 0)
-                            else:
-                                self.game_process.write_uchar(addr, 0)
-                                if item == ItemNames.extra_accessory_slot:
-                                    self.game_process.write_uchar(addr + ITEM_STRUCT_SIZE, 0)
+                    self.handle_chest_locations(self.game_process, main_struct)
 
-                    cache: dict[int, int] = {}
-                    for location in DataMaps.chest_data_map.keys():
-                        if location_table[location] in self.checked_locations:
-                            continue
-                        data = DataMaps.chest_data_map[location]
-                        value = 0
-                        if data.offset in cache:
-                            value = cache[data.offset]
-                        else:
-                            value = int(self.game_process.read_uchar(main_struct + data.offset))
-                            cache[data.offset] = value
-                        if value & data.mask != 0:
-                            self.queued_locations.append(location_table[location])
-                            vanilla_item_code = item_table[data.vanilla_item].code
-                            if data.vanilla_item in stackables_set and vanilla_item_code is not None:
-                                item_offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * vanilla_item_code)
-                                item_count = int(self.game_process.read_uchar(main_struct + item_offset + ITEM_COUNT_OFFSET))
-                                if item_count != 0:
-                                    item_count -= 1
-                                self.game_process.write_uchar(main_struct + item_offset + ITEM_COUNT_OFFSET, item_count)
-                                self.game_process.write_ushort(main_struct + item_offset, item_count << 8 + item_count)
-                        if location in DataMaps.important_item_chests:
-                            addr = main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET
-                            accessories_enabled = int(self.game_process.read_uchar(addr))
-                            accessories_enabled &= (0xF8 | self.local_accessories_enabled)
-                            self.game_process.write_uchar(addr, accessories_enabled)
-
-                    #last_recipe = int(self.game_process.read_ulonglong(self.game_process.base_address + LAST_RECIPE))
-                    #recipe = (last_recipe - (self.game_process.base_address + LAST_RECIPE)) / 0x30
-                    #if round(recipe) == recipe and recipe <= 93 and recipe > 0:
-                        #location = round(recipe) + 700
-                        #if location not in self.checked_locations:
-                            #self.queued_locations.append(location)
                     recipes = int.from_bytes(self.game_process.read_bytes(main_struct + RECIPE_CRAFTED_OFFSET, 12), "little")
                     for i in range(93):
                         if 1 << (i + 1) & recipes != 0:
@@ -484,125 +353,11 @@ class YohaneDeepblueContext(CommonContext):
                     if musical_scores == 0 and self.stored_musical_scores > 0:
                         self.game_process.write_uchar(inventory_musical_score_addr, 1)
                         self.stored_musical_scores -= 1
-                    received_items_addr = main_struct + RECEIVED_ITEMS_COUNTER_OFFSET + ITEM_COUNT_OFFSET
-                    self.highest_processed_item_index = int(self.game_process.read_uint(received_items_addr))
 
-                    new_items = self.items_received[self.highest_received_item_index :]
-                    for item in new_items:
-                        new_item = self.highest_received_item_index >= self.highest_processed_item_index
-                        if new_item:
-                            self.highest_processed_item_index += 1
-                        self.highest_received_item_index += 1
+                    self.handle_items_received(self.game_process, main_struct)
 
-                        item_name = item_id_to_name[item.item]
-                        if item_name not in self.local_received_items.keys():
-                            self.local_received_items[item_name] = 1
-                        else:
-                            self.local_received_items[item_name] += 1
-                        if item_name in DataMaps.progressive_to_character_item_map:
-                            items = DataMaps.progressive_to_character_item_map[item_name]
-                            if self.local_received_items[item_name] > 0:
-                                self.local_received_items[items[0]] = 1
-                            if self.local_received_items[item_name] > 1:
-                                self.local_received_items[items[1]] = 1
-
-                        if item.location in range(701, 800) and item.item < 1000:
-                            if item_name == ItemNames.musical_score:
-                                self.stored_musical_scores += 1
-
-                            new_item = False # local crafting, no real item
-
-                        # receive item
-                        if new_item:
-                            if item_name == ItemNames.musical_score:
-                                self.stored_musical_scores += 1
-                            elif item_name in stackables_set:
-                                offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item.item)
-                                value = int(self.game_process.read_uchar(main_struct + offset + ITEM_COUNT_OFFSET)) + 1 # make bundles?
-                                self.game_process.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, value)
-                                self.game_process.write_uchar(main_struct + offset + ITEM_NEW_OFFSET, 0)
-                                self.game_process.write_ushort(main_struct + offset, value << 8 + value)
-                                if item_name in accessories_table.keys():
-                                    slots = 1
-                                    if ItemNames.extra_accessory_slot in self.local_received_items:
-                                        slots += self.local_received_items[ItemNames.extra_accessory_slot]
-                                    for i in range(min(slots, 3)):
-                                        accessory = int(self.game_process.read_ushort(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET + 8 + (i*4)))
-                                        if accessory == 0:
-                                            self.game_process.write_ushort(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET + 8 + (i*4), item.item)
-                                            break
-                            elif item_name in yen_set:
-                                amount = 0
-                                match (item_name):
-                                    case ItemNames.small_yen:
-                                        amount = 10000
-                                    case ItemNames.medium_yen:
-                                        amount = 25000
-                                    case ItemNames.big_yen:
-                                        amount = 50000
-                                    case _:
-                                        raise ValueError(f"Unknown yen item '{item_name}' received!")
-                                yen = int(self.game_process.read_uint(main_struct + YEN_OFFSET))
-                                yen += amount
-                                self.game_process.write_uint(main_struct + YEN_OFFSET, yen)
-
-                        if item_name in weapons_table.keys():
-                            offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item.item)
-                            value = int(self.game_process.read_uchar(main_struct + offset + ITEM_COUNT_OFFSET)) + 1
-                            self.game_process.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, value)
-                            self.game_process.write_uchar(main_struct + offset + ITEM_NEW_OFFSET, 0)
-                            self.game_process.write_ushort(main_struct + offset, value << 8 + value)
-                            weapon = int(self.game_process.read_ushort(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET + 4))
-                            if weapon == 0:
-                                self.game_process.write_ushort(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET + 4, item.item)
-
-
-                        accessories_changed = 0
-                        if item_name == ItemNames.fallen_angels_soarshoes:
-                            accessories_changed |= 0x01
-                        elif item_name == ItemNames.gloves_of_might:
-                            accessories_changed |= 0x02
-                        elif item_name == ItemNames.sea_deitys_charm:
-                            accessories_changed |= 0x04
-                        if accessories_changed != 0:
-                            accessories_enabled = int(self.game_process.read_uchar(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET))
-                            accessories_enabled &= (0xFF ^ accessories_changed)
-                            self.local_accessories_enabled |= accessories_changed
-                            self.game_process.write_uchar(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET,
-                                                           accessories_enabled | accessories_changed)
-                    self.game_process.write_uint(main_struct + RECEIVED_ITEMS_COUNTER_OFFSET + ITEM_COUNT_OFFSET,
-                                                 self.highest_processed_item_index)
-                    self.game_process.write_uchar(main_struct + STORED_MUSICAL_SCORE_COUNTER_OFFSET + ITEM_COUNT_OFFSET,
-                                                  self.stored_musical_scores)
-
-                    for new_remotely_cleared_location in self.checked_locations - self.locations_checked:
-                        # other game collected item, clear location
-                        location_name = location_id_to_name[new_remotely_cleared_location]
-                        if location_name in DataMaps.chest_data_map.keys():
-                            data = DataMaps.chest_data_map[location_name]
-                            value = int(self.game_process.read_uchar(main_struct + data.offset))
-                            value |= data.mask
-                            self.game_process.write_uchar(main_struct + data.offset, value)
-                        elif location_name in DataMaps.character_rescue_flag_map.keys():
-                            flag = DataMaps.character_rescue_flag_map[location_name]
-                            game_progression_flags |= flag
-                            self.game_process.write_ushort(main_struct + GAME_PROGRESSION_FLAGS_OFFSET,
-                                                           game_progression_flags)
-                        elif location_name in DataMaps.boss_defeated_flag_map.keys():
-                            flag = DataMaps.boss_defeated_flag_map[location_name]
-                            boss_defeated_flags |= flag
-                            self.game_process.write_uint(main_struct + BOSS_DEFEATED_FLAGS, boss_defeated_flags)
-                        elif new_remotely_cleared_location in range(701, 800):
-                            offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * new_remotely_cleared_location)
-                            self.game_process.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 1)
-                            self.game_process.write_uchar(main_struct + offset + ITEM_NEW_OFFSET, 0)
-                            self.game_process.write_ushort(main_struct + offset, 1 << 8 + 1)
-                            offset = main_struct + RECIPE_CRAFTED_OFFSET
-                            recipes = int.from_bytes(self.game_process.read_bytes(offset, 12), "little")
-                            recipes |= 1  << (new_remotely_cleared_location - 700)
-                            self.game_process.write_bytes(offset, recipes.to_bytes(12, "little"), 12)
-                        self.locations_checked.add(new_remotely_cleared_location)
-                        pass
+                    self.handle_remotely_cleared_locations(self.game_process, main_struct,
+                                                     game_progression_flags, boss_defeated_flags)
 
                     in_credits = self.game_process.read_uchar(flags_struct + OFFSET_IN_CREDITS)
                     if (in_credits != 0 or game_flags & 0x1 != 0) and not self.finished_game:
@@ -631,7 +386,7 @@ class YohaneDeepblueContext(CommonContext):
                             self.patch_game()
                             self.game_connected = True
                             logger.info("Reconnected!")
-                    except Exception:
+                    except Exception as _:
                         await asyncio.sleep(1)
                 pass
             else:
@@ -639,6 +394,274 @@ class YohaneDeepblueContext(CommonContext):
                 pass
 
             await asyncio.sleep(0.1)
+
+
+    async def handle_characters(self, game: pymem.Pymem, main_struct: int):
+        character_quest_flags = int(game.read_uint(main_struct + CHARACTER_QUEST_FLAGS_OFFSET))
+        for location in DataMaps.character_quest_flag_map:
+            if location_table[location] in self.checked_locations:
+                continue
+            flag = DataMaps.character_quest_flag_map[location]
+            if character_quest_flags & flag != 0 and self.hinted_quest_flags & flag == 0:
+                self.hinted_quest_flags |= flag
+                if UpgradeHints._option_vanilla in self.slot_data["upgrade_hints"]:
+                    await self.send_msgs([{"cmd": "CreateHints", "locations": [location_table[location]]}])
+                if UpgradeHints._option_ap in self.slot_data["upgrade_hints"]:
+                    item = DataMaps.chest_data_map[location].vanilla_item
+                    if item not in self.local_received_items:
+                        real_location = self.slot_data["upgrades"][item_table[item].code - 1]
+                        if real_location[1] is not None:
+                            await self.send_msgs([{
+                                            "cmd": "CreateHints",
+                                            "player": real_location[0],
+                                            "locations": [real_location[1]]
+                                        }])
+        character_quest_flags &= 0xDB6DB6FF # Disable collection flags
+
+        character_unlock_flags = int(game.read_uint(main_struct + CHARACTER_UNLOCK_FLAGS_OFFSET))
+        character_unlock_flags &= 0xFFD5555F
+        for item in DataMaps.character_item_flags_map:
+            flag = DataMaps.character_item_flags_map[item]
+            if item in self.local_received_items:
+                character_unlock_flags |= flag
+                if item in DataMaps.character_item_to_quest_map.keys():
+                    character_quest_flags |= DataMaps.character_item_to_quest_map[item]
+            if character_unlock_flags & (flag << 1) != 0:
+                upgrade = DataMaps.character_to_upgrade_map[item]
+                if upgrade is not None:
+                    self.queued_locations.append(location_table[DataMaps.upgrade_item_to_quest_location_map[upgrade]])
+
+        game.write_uint(main_struct + CHARACTER_UNLOCK_FLAGS_OFFSET, character_unlock_flags)
+        game.write_uint(main_struct + CHARACTER_QUEST_FLAGS_OFFSET, character_quest_flags)
+
+
+    def handle_character_upgrades(self, game: pymem.Pymem, main_struct: int, map_area: int, map_room: int):
+        for item in character_upgrade_table.keys():
+            item_data = character_upgrade_table[item]
+            if item_data.code is not None: # events aren't real
+                offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item_data.code)
+                room = DataMaps.character_upgrade_to_area_room[item]
+                if (item in self.local_received_items and
+                                (not (room[0] == map_area and map_room in room[1]) or
+                                    location_table[room[2]] in self.checked_locations)):
+                    game.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 1)
+                else:
+                    game.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 0)
+
+
+    def handle_unique_accessories(self, game: pymem.Pymem, main_struct: int):
+        for item in unique_accessories_table.keys():
+            item_data = unique_accessories_table[item]
+            if item_data.code is not None: # events aren't real
+                offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item_data.code)
+                addr = main_struct + offset + ITEM_COUNT_OFFSET
+                if item in self.local_received_items:
+                    game.write_uchar(addr, 1)
+                    if item == ItemNames.extra_accessory_slot:
+                        if self.local_received_items[item] > 1:
+                            game.write_uchar(addr + ITEM_STRUCT_SIZE, 1)
+                        else:
+                            game.write_uchar(addr + ITEM_STRUCT_SIZE, 0)
+                else:
+                    game.write_uchar(addr, 0)
+                    if item == ItemNames.extra_accessory_slot:
+                        game.write_uchar(addr + ITEM_STRUCT_SIZE, 0)
+
+
+    def handle_chest_locations(self, game: pymem.Pymem, main_struct: int):
+        cache: dict[int, int] = {}
+        for location in DataMaps.chest_data_map.keys():
+            if location_table[location] in self.checked_locations:
+                continue
+            data = DataMaps.chest_data_map[location]
+            value = 0
+            if data.offset in cache:
+                value = cache[data.offset]
+            else:
+                value = int(game.read_uchar(main_struct + data.offset))
+                cache[data.offset] = value
+            if value & data.mask != 0:
+                self.queued_locations.append(location_table[location])
+                vanilla_item_code = item_table[data.vanilla_item].code
+                if data.vanilla_item in stackables_set and vanilla_item_code is not None:
+                    item_offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * vanilla_item_code)
+                    item_count = int(game.read_uchar(main_struct + item_offset + ITEM_COUNT_OFFSET))
+                    if item_count != 0:
+                        item_count -= 1
+                    game.write_uchar(main_struct + item_offset + ITEM_COUNT_OFFSET, item_count)
+                    game.write_ushort(main_struct + item_offset, item_count << 8 + item_count)
+            if location in DataMaps.important_item_chests:
+                addr = main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET
+                accessories_enabled = int(game.read_uchar(addr))
+                accessories_enabled &= (0xF8 | self.local_accessories_enabled)
+                game.write_uchar(addr, accessories_enabled)
+
+
+    async def detect_damage(self, game: pymem.Pymem):
+        if self.threadstack0 >= 0:
+            try:
+                self.yohane_pointer = _resolve_pointer(self, self.threadstack0, YOHANE_PTR)
+            except Exception: # threadstack doesn't always point to this
+                            #logger.info(e)
+                pass
+        if self.yohane_pointer >= 0:
+            try:
+                health = int(game.read_ulong(self.yohane_pointer + CURRENT_HP_OFFSET))
+                max_health = int(game.read_ulong(self.yohane_pointer + MAX_HP_OFFSET))
+                if self.damagelink_enabled:
+                    if (health < self.last_health and max_health == self.last_max_health and
+                                        self.can_send_damagelink):
+                        await self.send_damage(self.last_health - health)
+                        self.can_send_damagelink = False
+                    else:
+                        self.can_send_damagelink = True
+                    self.last_health = health
+                    self.last_max_health = max_health
+            except Exception:
+                pass
+
+
+    def handle_items_received(self, game: pymem.Pymem, main_struct: int):
+        received_items_addr = main_struct + RECEIVED_ITEMS_COUNTER_OFFSET + ITEM_COUNT_OFFSET
+        self.highest_processed_item_index = int(game.read_uint(received_items_addr))
+
+        new_items = self.items_received[self.highest_received_item_index :]
+        for item in new_items:
+            new_item = self.highest_received_item_index >= self.highest_processed_item_index
+            if new_item:
+                self.highest_processed_item_index += 1
+            self.highest_received_item_index += 1
+
+            item_name = item_id_to_name[item.item]
+            if item_name not in self.local_received_items.keys():
+                self.local_received_items[item_name] = 1
+            else:
+                self.local_received_items[item_name] += 1
+            if item_name in DataMaps.progressive_to_character_item_map:
+                items = DataMaps.progressive_to_character_item_map[item_name]
+                if self.local_received_items[item_name] > 0:
+                    self.local_received_items[items[0]] = 1
+                if self.local_received_items[item_name] > 1:
+                    self.local_received_items[items[1]] = 1
+
+            if item.location in range(701, 800) and item.item < 1000:
+                if item_name == ItemNames.musical_score:
+                    self.stored_musical_scores += 1
+
+                new_item = False # local crafting, no real item
+
+                        # receive item
+            if new_item:
+                if item_name == ItemNames.musical_score:
+                    self.stored_musical_scores += 1
+                elif item_name in stackables_set:
+                    offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item.item)
+                    value = int(game.read_uchar(main_struct + offset + ITEM_COUNT_OFFSET)) + 1 # make bundles?
+                    game.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, value)
+                    game.write_uchar(main_struct + offset + ITEM_NEW_OFFSET, 0)
+                    game.write_ushort(main_struct + offset, value << 8 + value)
+                    if item_name in accessories_table.keys():
+                        slots = 1
+                        if ItemNames.extra_accessory_slot in self.local_received_items:
+                            slots += self.local_received_items[ItemNames.extra_accessory_slot]
+                        for i in range(min(slots, 3)):
+                            accessory = int(game.read_ushort(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET + 8 + (i*4)))
+                            if accessory == 0:
+                                game.write_ushort(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET + 8 + (i*4), item.item)
+                                break
+                elif item_name in yen_set:
+                    amount = 0
+                    match (item_name):
+                        case ItemNames.small_yen:
+                            amount = 10000
+                        case ItemNames.medium_yen:
+                            amount = 25000
+                        case ItemNames.big_yen:
+                            amount = 50000
+                        case _:
+                            raise ValueError(f"Unknown yen item '{item_name}' received!")
+                    yen = int(game.read_uint(main_struct + YEN_OFFSET))
+                    yen += amount
+                    game.write_uint(main_struct + YEN_OFFSET, yen)
+
+            if item_name in weapons_table.keys():
+                offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item.item)
+                value = int(game.read_uchar(main_struct + offset + ITEM_COUNT_OFFSET)) + 1
+                game.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, value)
+                game.write_uchar(main_struct + offset + ITEM_NEW_OFFSET, 0)
+                game.write_ushort(main_struct + offset, value << 8 + value)
+                weapon = int(game.read_ushort(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET + 4))
+                if weapon == 0:
+                    game.write_ushort(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET + 4, item.item)
+
+
+            accessories_changed = 0
+            if item_name == ItemNames.fallen_angels_soarshoes:
+                accessories_changed |= 0x01
+            elif item_name == ItemNames.gloves_of_might:
+                accessories_changed |= 0x02
+            elif item_name == ItemNames.sea_deitys_charm:
+                accessories_changed |= 0x04
+            if accessories_changed != 0:
+                accessories_enabled = int(game.read_uchar(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET))
+                accessories_enabled &= (0xFF ^ accessories_changed)
+                self.local_accessories_enabled |= accessories_changed
+                game.write_uchar(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET,
+                                                           accessories_enabled | accessories_changed)
+        game.write_uint(main_struct + RECEIVED_ITEMS_COUNTER_OFFSET + ITEM_COUNT_OFFSET,
+                                                 self.highest_processed_item_index)
+        game.write_uchar(main_struct + STORED_MUSICAL_SCORE_COUNTER_OFFSET + ITEM_COUNT_OFFSET,
+                                                  self.stored_musical_scores)
+
+
+    def handle_remotely_cleared_locations(self, game: pymem.Pymem, main_struct: int,
+                                                game_progression_flags: int, boss_defeated_flags: int):
+        for new_remotely_cleared_location in self.checked_locations - self.locations_checked:
+                        # other game collected item, clear location
+            location_name = location_id_to_name[new_remotely_cleared_location]
+            if location_name in DataMaps.chest_data_map.keys():
+                data = DataMaps.chest_data_map[location_name]
+                value = int(game.read_uchar(main_struct + data.offset))
+                value |= data.mask
+                game.write_uchar(main_struct + data.offset, value)
+            elif location_name in DataMaps.character_rescue_flag_map.keys():
+                flag = DataMaps.character_rescue_flag_map[location_name]
+                game_progression_flags |= flag
+                game.write_ushort(main_struct + GAME_PROGRESSION_FLAGS_OFFSET,
+                                                           game_progression_flags)
+            elif location_name in DataMaps.boss_defeated_flag_map.keys():
+                flag = DataMaps.boss_defeated_flag_map[location_name]
+                boss_defeated_flags |= flag
+                game.write_uint(main_struct + BOSS_DEFEATED_FLAGS, boss_defeated_flags)
+            elif new_remotely_cleared_location in range(701, 800):
+                offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * new_remotely_cleared_location)
+                game.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 1)
+                game.write_uchar(main_struct + offset + ITEM_NEW_OFFSET, 0)
+                game.write_ushort(main_struct + offset, 1 << 8 + 1)
+                offset = main_struct + RECIPE_CRAFTED_OFFSET
+                recipes = int.from_bytes(game.read_bytes(offset, 12), "little")
+                recipes |= 1 << (new_remotely_cleared_location - 700)
+                game.write_bytes(offset, recipes.to_bytes(12, "little"), 12)
+            self.locations_checked.add(new_remotely_cleared_location)
+            pass
+
+
+    async def handle_map_update(self, map_area: int, map_room: int):
+        if self.last_map_area != map_area or self.last_map_room != map_room:
+            if self.debug_log:
+                logger.info("Entering room %d in area %d", map_room, map_area)
+            if self.last_map_area != map_area:
+                await self.send_msgs([{ # Update package for trackers
+                                "cmd": "Bounce",
+                                "slots": [self.slot],
+                                "data": {
+                                    "type": "MapUpdate",
+                                    "mapId": map_area,
+                                },
+                            }])
+            self.last_map_area = map_area
+            self.last_map_room = map_room
+
 
     def on_package(self, cmd: str, args: dict) -> None:
         if cmd == "Connected":
@@ -854,6 +877,30 @@ class YohaneDeepblueContext(CommonContext):
         return _read_address(self, self.game_process.base_address + base_offset)
 
 
+    def get_threadstack0(self) -> int | None:
+        if not self.game_connected or self.game_process is None:
+            raise Exception("Must be connected to the game!")
+        if self.kernel32 is None:
+            self.kernel32 = pymem.process.module_from_name(self.game_process.process_handle, "kernel32.dll")
+        if self.kernel32 is not None:
+            try:
+                main_thread = self.game_process.main_thread
+                for i in range(main_thread._query_teb().NtTib.StackBase - 8,
+                                           main_thread._query_teb().NtTib.StackLimit, -8):
+                    try:
+                        value = int(self.game_process.read_ulonglong(i))
+                        if (value > self.kernel32.lpBaseOfDll and
+                                            value < self.kernel32.lpBaseOfDll + self.kernel32.SizeOfImage):
+                            return i
+                            break
+                    except Exception:
+                        return None
+            except Exception:
+                #logger.info(e)
+                return None
+        return None
+
+
 def launch_client(*args: Sequence[str]) -> None:
     parser = get_base_parser(description="Yohane BiD Client")
     parser.add_argument("--name", default=None, help="Slot Name to connect as.")
@@ -898,3 +945,4 @@ def _resolve_pointer(ctx: YohaneDeepblueContext, base_address: int, pointer: lis
         except Exception:
             return -1
     return address
+
