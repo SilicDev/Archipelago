@@ -58,6 +58,8 @@ MUSICAL_SCORES_INVENTORY_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 419) # 
 RECIPE_CRAFTED_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 230) # Compound Lens (unused) 0x1590
 RECEIVED_ITEMS_COUNTER_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 233) # Supreme Squid Ink (Unused)
 STORED_MUSICAL_SCORE_COUNTER_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 237) # Dried Jellyfish (Unused)
+SLOT_NAME_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 240) # Demecore (Unused)
+SEED_NAME_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 630) # After weapons
 
 PTR_FLAGS_STRUCT = [0x28, 0x8, 0x8]
 OFFSET_AREA = 0xA0
@@ -214,6 +216,7 @@ class YohaneDeepblueContext(CommonContext):
     craftsanity: bool = False
 
     debug_log = not Utils.is_frozen()
+    game_patched = False
     valid_slot = True
 
     deathlink_enabled = False
@@ -245,7 +248,7 @@ class YohaneDeepblueContext(CommonContext):
 
     async def game_watcher(self):
         while not self.exit_event.is_set():
-            if self.game_connected and self.connection_status == ConnectionStatus.CONNECTED:
+            if self.game_connected and self.connection_status == ConnectionStatus.CONNECTED and self.valid_slot:
                 if ((self.deathlink_enabled and f"DeathLink{self.death_link_group}" not in self.tags) or
                         (not self.deathlink_enabled and f"DeathLink{self.death_link_group}" in self.tags)):
                     await self.update_death_link_group(self.death_link_group)
@@ -268,7 +271,7 @@ class YohaneDeepblueContext(CommonContext):
                         continue
 
                     ingame_time = int(self.game_process.read_uint(flags_struct + OFFSET_INGAME_TIME))
-                    if ingame_time <= 1000:
+                    if ingame_time <= 0:
                         await asyncio.sleep(0.1)
                         continue
 
@@ -278,6 +281,28 @@ class YohaneDeepblueContext(CommonContext):
                         await asyncio.sleep(1)
                         continue
 
+                    slot_name = str(self.game_process.read_string(main_struct + SLOT_NAME_OFFSET, 16))
+                    if len(slot_name) != 0 and slot_name != self.slot_info[self.slot].name:
+                        self.valid_slot = False
+                        logger.warning("Savefile slot name doesn't match slot name! Restart the cient to retry")
+                        continue
+                    seed_name = str(self.game_process.read_string(main_struct + SEED_NAME_OFFSET, ITEM_STRUCT_SIZE*2))
+                    if len(seed_name) != 0 and seed_name != self.seed_name[:ITEM_STRUCT_SIZE*2]:
+                        self.valid_slot = False
+                        logger.warning("Savefile seed name doesn't match seed name! Restart the cient to retry")
+                        continue
+                    game_progression_flags = int(self.game_process.read_ushort(main_struct + GAME_PROGRESSION_FLAGS_OFFSET))
+                    if len(slot_name) == 0 and len(seed_name) == 0:
+                        if game_progression_flags <= 6:
+                            self.game_process.write_string(main_struct + SLOT_NAME_OFFSET, self.slot_info[self.slot].name)
+                            self.game_process.write_string(main_struct + SEED_NAME_OFFSET, self.seed_name[:ITEM_STRUCT_SIZE*2])
+                        else:
+                            self.valid_slot = False
+                            logger.warning("Loaded non-empty save! Restart the cient to retry")
+                            continue
+
+                    if not self.game_patched:
+                        self.patch_game()
 
                     is_dead = self.game_process.read_uchar(flags_struct + OFFSET_IS_DEAD)
                     if self.deathlink_enabled:
@@ -309,7 +334,6 @@ class YohaneDeepblueContext(CommonContext):
                         dungeon_flags |= 0x2
                         self.game_process.write_uchar(main_struct + DUNGEON_FLAGS_OFFSET, dungeon_flags)
 
-                    game_progression_flags = int(self.game_process.read_ushort(main_struct + GAME_PROGRESSION_FLAGS_OFFSET))
                     for location in DataMaps.character_rescue_flag_map:
                         if location_table[location] in self.checked_locations:
                             game_progression_flags |= DataMaps.character_rescue_flag_map[location]
@@ -383,7 +407,7 @@ class YohaneDeepblueContext(CommonContext):
                     try:
                         self.game_process = PymemEX(process_name="game.exe", exact_match=True)
                         if self.game_process is not None:
-                            self.patch_game()
+                            self.game_patched = False
                             self.game_connected = True
                             logger.info("Reconnected!")
                     except Exception as _:
@@ -665,6 +689,11 @@ class YohaneDeepblueContext(CommonContext):
 
     def on_package(self, cmd: str, args: dict) -> None:
         if cmd == "Connected":
+            if self.last_connected_slot is not None:
+                self.valid_slot = False
+                logger.warning("Connected to a different slot than last, aborting! Restart the cient to retry")
+                return
+
             self.last_connected_slot = self.slot
 
             self.connection_status = ConnectionStatus.NOT_CONNECTED
@@ -691,6 +720,7 @@ class YohaneDeepblueContext(CommonContext):
                 }]))
                 self.locations_scouted.update(location_scouts)
 
+            self.valid_slot = True
             self.connection_status = ConnectionStatus.CONNECTED
             self.connect_to_game()
         elif cmd == "Bounced":
@@ -711,6 +741,13 @@ class YohaneDeepblueContext(CommonContext):
                             self.game_process.write_int(recipe_offset + (item.location - 700)*0x30 + 0x8, item.item)
                         else:
                             self.game_process.write_int(recipe_offset + (item.location - 700)*0x30 + 0x8, item.location)
+        elif cmd == "RoomInfo":
+            print(args["seed_name"])
+            if self.seed_name is None:
+                self.seed_name = args["seed_name"]
+            elif self.seed_name != args["seed_name"]:
+                self.valid_slot = False
+                logger.warning("Connected to a different seed than last, aborting! Restart the cient to retry")
 
 
     async def send_death(self, death_text: str = ""):
@@ -835,7 +872,7 @@ class YohaneDeepblueContext(CommonContext):
         try:
             self.game_process = PymemEX(process_name="game.exe", exact_match=True)
             if self.game_process is not None:
-                self.patch_game()
+                self.game_patched = False
                 self.game_connected = True
                 logger.info("Successfully connected to %s.", self.game)
         except Exception as _:
@@ -845,7 +882,7 @@ class YohaneDeepblueContext(CommonContext):
         pass
 
     def patch_game(self) -> None:
-        if self.game_process is not None:
+        if self.game_process is not None and self.valid_slot:
             #with open("./worlds/yohane_deepblue/test/recipe_dump.bin", "w") as f:
                 #recipe_offset = self.game_process.base_address + LAST_RECIPE
                 #for i in range(93):
@@ -869,6 +906,7 @@ class YohaneDeepblueContext(CommonContext):
                     for j in range(len(ingredients)):
                         ingredient = (ingredients[j] & 0x3FF) | ((ingredients[j] & 0xFC00) << (6 + 16))
                         self.game_process.write_ulonglong(recipe_offset + (i+1)*0x30 + 0x10 + j*8, ingredient)
+            self.game_patched = True
 
 
     def get_base_address(self, base_offset: int) -> int:
