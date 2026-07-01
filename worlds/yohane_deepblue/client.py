@@ -66,7 +66,7 @@ SEED_NAME_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 630) # After weapons
 
 PTR_FLAGS_STRUCT = [0x28, 0x8, 0x8]
 OFFSET_AREA = 0xA0
-OFFSET_AREA_RELOAD = 0xCD
+OFFSET_AREA_RELOAD = 0xCC
 OFFSET_IN_CREDITS = 0xCE
 OFFSET_INGAME_TIME = 0x238
 OFFSET_IS_DEAD = 0x360
@@ -288,12 +288,12 @@ class YohaneDeepblueContext(CommonContext):
                     slot_name = str(self.game_process.read_string(save_game + SLOT_NAME_OFFSET, 16))
                     if len(slot_name) != 0 and slot_name != self.slot_info[self.slot].name:
                         self.valid_slot = False
-                        logger.warning("Savefile slot name doesn't match slot name! Restart the cient to retry")
+                        logger.warning("Savefile slot name doesn't match slot name! Restart the client to retry")
                         continue
                     seed_name = str(self.game_process.read_string(save_game + SEED_NAME_OFFSET, ITEM_STRUCT_SIZE*2))
                     if len(seed_name) != 0 and seed_name != self.seed_name[:ITEM_STRUCT_SIZE*2]:
                         self.valid_slot = False
-                        logger.warning("Savefile seed name doesn't match seed name! Restart the cient to retry")
+                        logger.warning("Savefile seed name doesn't match seed name! Restart the client to retry")
                         continue
                     game_progression_flags = int(self.game_process.read_ushort(save_game + GAME_PROGRESSION_FLAGS_OFFSET))
                     if len(slot_name) == 0 and len(seed_name) == 0:
@@ -302,7 +302,7 @@ class YohaneDeepblueContext(CommonContext):
                             self.game_process.write_string(save_game + SEED_NAME_OFFSET, self.seed_name[:ITEM_STRUCT_SIZE*2])
                         else:
                             self.valid_slot = False
-                            logger.warning("Loaded non-empty save! Restart the cient to retry")
+                            logger.warning("Loaded non-empty save! Restart the client to retry")
                             continue
 
                     if not self.game_patched:
@@ -695,7 +695,7 @@ class YohaneDeepblueContext(CommonContext):
         if cmd == "Connected":
             if self.last_connected_slot is not None:
                 self.valid_slot = False
-                logger.warning("Connected to a different slot than last, aborting! Restart the cient to retry")
+                logger.warning("Connected to a different slot than last, aborting! Restart the client to retry")
                 return
 
             self.last_connected_slot = self.slot
@@ -751,7 +751,7 @@ class YohaneDeepblueContext(CommonContext):
                 self.seed_name = args["seed_name"]
             elif self.seed_name != args["seed_name"]:
                 self.valid_slot = False
-                logger.warning("Connected to a different seed than last, aborting! Restart the cient to retry")
+                logger.warning("Connected to a different seed than last, aborting! Restart the client to retry")
 
 
     async def send_death(self, death_text: str = ""):
@@ -792,7 +792,7 @@ class YohaneDeepblueContext(CommonContext):
     def on_deathlink(self, data: dict[str, Any]) -> None:
         if self.game_process is not None:
             _text = data.get("cause", "") # for ingame display
-            flags_struct = self.game_process.resolve_offsets(FLAGS_STRUCT_BASE_OFFSET, PTR_FLAGS_STRUCT)
+            flags_struct = _resolve_pointer(self, self.get_base_address(FLAGS_STRUCT_BASE_OFFSET), PTR_FLAGS_STRUCT)
             self.game_process.write_uchar(flags_struct + OFFSET_IS_DEAD, 1)
             self.game_process.write_uchar(flags_struct + OFFSET_AREA_RELOAD, 1)
             self.can_send_deathlink = False

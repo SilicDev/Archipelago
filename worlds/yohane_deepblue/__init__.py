@@ -82,8 +82,6 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
 
     origin_region_name = LocationNames.origin_region
 
-    required_client_version = (0, 6, 7)
-
     def __init__(self, multiworld: MultiWorld, player: int) -> None:
         super().__init__(multiworld, player)
         self.recipe_list = RecipeList()
