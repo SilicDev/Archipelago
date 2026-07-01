@@ -39,21 +39,24 @@ if TYPE_CHECKING:
 FLAGS_STRUCT_BASE_OFFSET = 0x0115B498
 MAIN_BASE_OFFSET = 0x0166B418
 
-YEN_OFFSET = 0x51050
-GAME_FLAGS_OFFSET = 0x51058
-CHARACTER_UNLOCK_FLAGS_OFFSET = 0x51064
-GAME_PROGRESSION_FLAGS_OFFSET = 0x51071
-CHARACTER_QUEST_FLAGS_OFFSET = 0x51073
-BOSS_DEFEATED_FLAGS = 0x5107D
-DUNGEON_FLAGS_OFFSET = 0x5124E
-INVENTORY_OFFSET = 0x52560
+CURRENT_SAVE_OFFSET = 0x51000
+SAVE_GAME_SIZE = 0x7c00
+
+YEN_OFFSET = 0x50
+GAME_FLAGS_OFFSET = 0x58
+CHARACTER_UNLOCK_FLAGS_OFFSET = 0x64
+GAME_PROGRESSION_FLAGS_OFFSET = 0x71
+CHARACTER_QUEST_FLAGS_OFFSET = 0x73
+BOSS_DEFEATED_FLAGS = 0x7D
+DUNGEON_FLAGS_OFFSET = 0x24E
+INVENTORY_OFFSET = 0x1560
 ITEM_SECOND_MAGIC_OFFSET = 0x08
 ITEM_COUNT_OFFSET = 0x10
 ITEM_NEW_OFFSET = 0x11
 ITEM_STRUCT_SIZE = 0x18
-EQUIPPED_ABILITIES_FLAGS_OFFSET = 0x58560
-MAP_AREA_OFFSET = 0x585EC
-MAP_ROOM_OFFSET = 0x585EF
+EQUIPPED_ABILITIES_FLAGS_OFFSET = 0x7560
+MAP_AREA_OFFSET = 0x75EC
+MAP_ROOM_OFFSET = 0x75EF
 MUSICAL_SCORES_INVENTORY_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 419) # Musical Score
 RECIPE_CRAFTED_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 230) # Compound Lens (unused) 0x1590
 RECEIVED_ITEMS_COUNTER_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 233) # Supreme Squid Ink (Unused)
@@ -280,22 +283,23 @@ class YohaneDeepblueContext(CommonContext):
                         logger.info("ERROR: Couldn't find main data struct!")
                         await asyncio.sleep(1)
                         continue
+                    save_game = main_struct + CURRENT_SAVE_OFFSET
 
-                    slot_name = str(self.game_process.read_string(main_struct + SLOT_NAME_OFFSET, 16))
+                    slot_name = str(self.game_process.read_string(save_game + SLOT_NAME_OFFSET, 16))
                     if len(slot_name) != 0 and slot_name != self.slot_info[self.slot].name:
                         self.valid_slot = False
                         logger.warning("Savefile slot name doesn't match slot name! Restart the cient to retry")
                         continue
-                    seed_name = str(self.game_process.read_string(main_struct + SEED_NAME_OFFSET, ITEM_STRUCT_SIZE*2))
+                    seed_name = str(self.game_process.read_string(save_game + SEED_NAME_OFFSET, ITEM_STRUCT_SIZE*2))
                     if len(seed_name) != 0 and seed_name != self.seed_name[:ITEM_STRUCT_SIZE*2]:
                         self.valid_slot = False
                         logger.warning("Savefile seed name doesn't match seed name! Restart the cient to retry")
                         continue
-                    game_progression_flags = int(self.game_process.read_ushort(main_struct + GAME_PROGRESSION_FLAGS_OFFSET))
+                    game_progression_flags = int(self.game_process.read_ushort(save_game + GAME_PROGRESSION_FLAGS_OFFSET))
                     if len(slot_name) == 0 and len(seed_name) == 0:
                         if game_progression_flags <= 6:
-                            self.game_process.write_string(main_struct + SLOT_NAME_OFFSET, self.slot_info[self.slot].name)
-                            self.game_process.write_string(main_struct + SEED_NAME_OFFSET, self.seed_name[:ITEM_STRUCT_SIZE*2])
+                            self.game_process.write_string(save_game + SLOT_NAME_OFFSET, self.slot_info[self.slot].name)
+                            self.game_process.write_string(save_game + SEED_NAME_OFFSET, self.seed_name[:ITEM_STRUCT_SIZE*2])
                         else:
                             self.valid_slot = False
                             logger.warning("Loaded non-empty save! Restart the cient to retry")
@@ -317,22 +321,22 @@ class YohaneDeepblueContext(CommonContext):
                         self.threadstack0 = threadstack
                     await self.detect_damage(self.game_process)
 
-                    map_area = int(self.game_process.read_uchar(main_struct + MAP_AREA_OFFSET))
-                    map_room = int(self.game_process.read_uchar(main_struct + MAP_ROOM_OFFSET))
+                    map_area = int(self.game_process.read_uchar(save_game + MAP_AREA_OFFSET))
+                    map_room = int(self.game_process.read_uchar(save_game + MAP_ROOM_OFFSET))
                     await self.handle_map_update(map_area, map_room)
-                    game_flags = int(self.game_process.read_uchar(main_struct + GAME_FLAGS_OFFSET))
+                    game_flags = int(self.game_process.read_uchar(save_game + GAME_FLAGS_OFFSET))
                     in_parlor = game_flags & 0x8 != 0
                     if in_parlor != self.in_parlor:
                         if in_parlor:
                             logger.info("Yohane safely arrived in her Fortune Parlor")
                         self.in_parlor = in_parlor
 
-                    dungeon_flags = int(self.game_process.read_uchar(main_struct + DUNGEON_FLAGS_OFFSET))
+                    dungeon_flags = int(self.game_process.read_uchar(save_game + DUNGEON_FLAGS_OFFSET))
                     if self.slot_data["early_chika_blocks_moved"] == Toggle.option_true and dungeon_flags & 0x2 == 0:
                         if self.debug_log:
                             logger.info("Setting Chika Block flags")
                         dungeon_flags |= 0x2
-                        self.game_process.write_uchar(main_struct + DUNGEON_FLAGS_OFFSET, dungeon_flags)
+                        self.game_process.write_uchar(save_game + DUNGEON_FLAGS_OFFSET, dungeon_flags)
 
                     for location in DataMaps.character_rescue_flag_map:
                         if location_table[location] in self.checked_locations:
@@ -343,24 +347,24 @@ class YohaneDeepblueContext(CommonContext):
                     if (map_area == 1 and map_room in [9, 10] and ItemNames.boss_token in self.local_received_items and
                             self.local_received_items[ItemNames.boss_token] >= 8):
                         game_progression_flags |= 0x8000 # Spawns Infernal Altar cutscene
-                    self.game_process.write_ushort(main_struct + GAME_PROGRESSION_FLAGS_OFFSET, game_progression_flags)
+                    self.game_process.write_ushort(save_game + GAME_PROGRESSION_FLAGS_OFFSET, game_progression_flags)
 
-                    boss_defeated_flags = int(self.game_process.read_uint(main_struct + BOSS_DEFEATED_FLAGS))
+                    boss_defeated_flags = int(self.game_process.read_uint(save_game + BOSS_DEFEATED_FLAGS))
                     for location in DataMaps.boss_defeated_flag_map:
                         if location_table[location] in self.checked_locations:
                             continue
                         if boss_defeated_flags & DataMaps.boss_defeated_flag_map[location] != 0:
                             self.queued_locations.append(location_table[location])
 
-                    await self.handle_characters(self.game_process, main_struct)
+                    await self.handle_characters(self.game_process, save_game)
 
-                    self.handle_character_upgrades(self.game_process, main_struct, map_area, map_room)
+                    self.handle_character_upgrades(self.game_process, save_game, map_area, map_room)
 
-                    self.handle_unique_accessories(self.game_process, main_struct)
+                    self.handle_unique_accessories(self.game_process, save_game)
 
-                    self.handle_chest_locations(self.game_process, main_struct)
+                    self.handle_chest_locations(self.game_process, save_game)
 
-                    recipes = int.from_bytes(self.game_process.read_bytes(main_struct + RECIPE_CRAFTED_OFFSET, 12), "little")
+                    recipes = int.from_bytes(self.game_process.read_bytes(save_game + RECIPE_CRAFTED_OFFSET, 12), "little")
                     for i in range(93):
                         if 1 << (i + 1) & recipes != 0:
                             self.queued_locations.append(701+i)
@@ -370,17 +374,17 @@ class YohaneDeepblueContext(CommonContext):
                         self.locations_checked.add(location)
                         await self.check_locations({location})
 
-                    stored_musical_scores_addr = main_struct + STORED_MUSICAL_SCORE_COUNTER_OFFSET + ITEM_COUNT_OFFSET
+                    stored_musical_scores_addr = save_game + STORED_MUSICAL_SCORE_COUNTER_OFFSET + ITEM_COUNT_OFFSET
                     self.stored_musical_scores = int(self.game_process.read_uchar(stored_musical_scores_addr))
-                    inventory_musical_score_addr = main_struct + MUSICAL_SCORES_INVENTORY_OFFSET + ITEM_COUNT_OFFSET
+                    inventory_musical_score_addr = save_game + MUSICAL_SCORES_INVENTORY_OFFSET + ITEM_COUNT_OFFSET
                     musical_scores = int(self.game_process.read_uchar(inventory_musical_score_addr))
                     if musical_scores == 0 and self.stored_musical_scores > 0:
                         self.game_process.write_uchar(inventory_musical_score_addr, 1)
                         self.stored_musical_scores -= 1
 
-                    self.handle_items_received(self.game_process, main_struct)
+                    self.handle_items_received(self.game_process, save_game)
 
-                    self.handle_remotely_cleared_locations(self.game_process, main_struct,
+                    self.handle_remotely_cleared_locations(self.game_process, save_game,
                                                      game_progression_flags, boss_defeated_flags)
 
                     in_credits = self.game_process.read_uchar(flags_struct + OFFSET_IN_CREDITS)
@@ -420,8 +424,8 @@ class YohaneDeepblueContext(CommonContext):
             await asyncio.sleep(0.1)
 
 
-    async def handle_characters(self, game: pymem.Pymem, main_struct: int):
-        character_quest_flags = int(game.read_uint(main_struct + CHARACTER_QUEST_FLAGS_OFFSET))
+    async def handle_characters(self, game: pymem.Pymem, save_game: int):
+        character_quest_flags = int(game.read_uint(save_game + CHARACTER_QUEST_FLAGS_OFFSET))
         for location in DataMaps.character_quest_flag_map:
             if location_table[location] in self.checked_locations:
                 continue
@@ -442,7 +446,7 @@ class YohaneDeepblueContext(CommonContext):
                                         }])
         character_quest_flags &= 0xDB6DB6FF # Disable collection flags
 
-        character_unlock_flags = int(game.read_uint(main_struct + CHARACTER_UNLOCK_FLAGS_OFFSET))
+        character_unlock_flags = int(game.read_uint(save_game + CHARACTER_UNLOCK_FLAGS_OFFSET))
         character_unlock_flags &= 0xFFD5555F
         for item in DataMaps.character_item_flags_map:
             flag = DataMaps.character_item_flags_map[item]
@@ -455,11 +459,11 @@ class YohaneDeepblueContext(CommonContext):
                 if upgrade is not None:
                     self.queued_locations.append(location_table[DataMaps.upgrade_item_to_quest_location_map[upgrade]])
 
-        game.write_uint(main_struct + CHARACTER_UNLOCK_FLAGS_OFFSET, character_unlock_flags)
-        game.write_uint(main_struct + CHARACTER_QUEST_FLAGS_OFFSET, character_quest_flags)
+        game.write_uint(save_game + CHARACTER_UNLOCK_FLAGS_OFFSET, character_unlock_flags)
+        game.write_uint(save_game + CHARACTER_QUEST_FLAGS_OFFSET, character_quest_flags)
 
 
-    def handle_character_upgrades(self, game: pymem.Pymem, main_struct: int, map_area: int, map_room: int):
+    def handle_character_upgrades(self, game: pymem.Pymem, save_game: int, map_area: int, map_room: int):
         for item in character_upgrade_table.keys():
             item_data = character_upgrade_table[item]
             if item_data.code is not None: # events aren't real
@@ -468,17 +472,17 @@ class YohaneDeepblueContext(CommonContext):
                 if (item in self.local_received_items and
                                 (not (room[0] == map_area and map_room in room[1]) or
                                     location_table[room[2]] in self.checked_locations)):
-                    game.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 1)
+                    game.write_uchar(save_game + offset + ITEM_COUNT_OFFSET, 1)
                 else:
-                    game.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 0)
+                    game.write_uchar(save_game + offset + ITEM_COUNT_OFFSET, 0)
 
 
-    def handle_unique_accessories(self, game: pymem.Pymem, main_struct: int):
+    def handle_unique_accessories(self, game: pymem.Pymem, save_game: int):
         for item in unique_accessories_table.keys():
             item_data = unique_accessories_table[item]
             if item_data.code is not None: # events aren't real
                 offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item_data.code)
-                addr = main_struct + offset + ITEM_COUNT_OFFSET
+                addr = save_game + offset + ITEM_COUNT_OFFSET
                 if item in self.local_received_items:
                     game.write_uchar(addr, 1)
                     if item == ItemNames.extra_accessory_slot:
@@ -492,7 +496,7 @@ class YohaneDeepblueContext(CommonContext):
                         game.write_uchar(addr + ITEM_STRUCT_SIZE, 0)
 
 
-    def handle_chest_locations(self, game: pymem.Pymem, main_struct: int):
+    def handle_chest_locations(self, game: pymem.Pymem, save_game: int):
         cache: dict[int, int] = {}
         for location in DataMaps.chest_data_map.keys():
             if location_table[location] in self.checked_locations:
@@ -502,20 +506,20 @@ class YohaneDeepblueContext(CommonContext):
             if data.offset in cache:
                 value = cache[data.offset]
             else:
-                value = int(game.read_uchar(main_struct + data.offset))
+                value = int(game.read_uchar(save_game + data.offset))
                 cache[data.offset] = value
             if value & data.mask != 0:
                 self.queued_locations.append(location_table[location])
                 vanilla_item_code = item_table[data.vanilla_item].code
                 if data.vanilla_item in stackables_set and vanilla_item_code is not None:
                     item_offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * vanilla_item_code)
-                    item_count = int(game.read_uchar(main_struct + item_offset + ITEM_COUNT_OFFSET))
+                    item_count = int(game.read_uchar(save_game + item_offset + ITEM_COUNT_OFFSET))
                     if item_count != 0:
                         item_count -= 1
-                    game.write_uchar(main_struct + item_offset + ITEM_COUNT_OFFSET, item_count)
-                    game.write_ushort(main_struct + item_offset, item_count << 8 + item_count)
+                    game.write_uchar(save_game + item_offset + ITEM_COUNT_OFFSET, item_count)
+                    game.write_ushort(save_game + item_offset, item_count << 8 + item_count)
             if location in DataMaps.important_item_chests:
-                addr = main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET
+                addr = save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET
                 accessories_enabled = int(game.read_uchar(addr))
                 accessories_enabled &= (0xF8 | self.local_accessories_enabled)
                 game.write_uchar(addr, accessories_enabled)
@@ -545,8 +549,8 @@ class YohaneDeepblueContext(CommonContext):
                 pass
 
 
-    def handle_items_received(self, game: pymem.Pymem, main_struct: int):
-        received_items_addr = main_struct + RECEIVED_ITEMS_COUNTER_OFFSET + ITEM_COUNT_OFFSET
+    def handle_items_received(self, game: pymem.Pymem, save_game: int):
+        received_items_addr = save_game + RECEIVED_ITEMS_COUNTER_OFFSET + ITEM_COUNT_OFFSET
         self.highest_processed_item_index = int(game.read_uint(received_items_addr))
 
         new_items = self.items_received[self.highest_received_item_index :]
@@ -580,18 +584,18 @@ class YohaneDeepblueContext(CommonContext):
                     self.stored_musical_scores += 1
                 elif item_name in stackables_set:
                     offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item.item)
-                    value = int(game.read_uchar(main_struct + offset + ITEM_COUNT_OFFSET)) + 1 # make bundles?
-                    game.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, value)
-                    game.write_uchar(main_struct + offset + ITEM_NEW_OFFSET, 0)
-                    game.write_ushort(main_struct + offset, value << 8 + value)
+                    value = int(game.read_uchar(save_game + offset + ITEM_COUNT_OFFSET)) + 1 # make bundles?
+                    game.write_uchar(save_game + offset + ITEM_COUNT_OFFSET, value)
+                    game.write_uchar(save_game + offset + ITEM_NEW_OFFSET, 0)
+                    game.write_ushort(save_game + offset, value << 8 + value)
                     if item_name in accessories_table.keys():
                         slots = 1
                         if ItemNames.extra_accessory_slot in self.local_received_items:
                             slots += self.local_received_items[ItemNames.extra_accessory_slot]
                         for i in range(min(slots, 3)):
-                            accessory = int(game.read_ushort(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET + 8 + (i*4)))
+                            accessory = int(game.read_ushort(save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET + 8 + (i*4)))
                             if accessory == 0:
-                                game.write_ushort(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET + 8 + (i*4), item.item)
+                                game.write_ushort(save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET + 8 + (i*4), item.item)
                                 break
                 elif item_name in yen_set:
                     amount = 0
@@ -604,19 +608,19 @@ class YohaneDeepblueContext(CommonContext):
                             amount = 50000
                         case _:
                             raise ValueError(f"Unknown yen item '{item_name}' received!")
-                    yen = int(game.read_uint(main_struct + YEN_OFFSET))
+                    yen = int(game.read_uint(save_game + YEN_OFFSET))
                     yen += amount
-                    game.write_uint(main_struct + YEN_OFFSET, yen)
+                    game.write_uint(save_game + YEN_OFFSET, yen)
 
             if item_name in weapons_table.keys():
                 offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item.item)
-                value = int(game.read_uchar(main_struct + offset + ITEM_COUNT_OFFSET)) + 1
-                game.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, value)
-                game.write_uchar(main_struct + offset + ITEM_NEW_OFFSET, 0)
-                game.write_ushort(main_struct + offset, value << 8 + value)
-                weapon = int(game.read_ushort(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET + 4))
+                value = int(game.read_uchar(save_game + offset + ITEM_COUNT_OFFSET)) + 1
+                game.write_uchar(save_game + offset + ITEM_COUNT_OFFSET, value)
+                game.write_uchar(save_game + offset + ITEM_NEW_OFFSET, 0)
+                game.write_ushort(save_game + offset, value << 8 + value)
+                weapon = int(game.read_ushort(save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET + 4))
                 if weapon == 0:
-                    game.write_ushort(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET + 4, item.item)
+                    game.write_ushort(save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET + 4, item.item)
 
 
             accessories_changed = 0
@@ -627,42 +631,42 @@ class YohaneDeepblueContext(CommonContext):
             elif item_name == ItemNames.sea_deitys_charm:
                 accessories_changed |= 0x04
             if accessories_changed != 0:
-                accessories_enabled = int(game.read_uchar(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET))
+                accessories_enabled = int(game.read_uchar(save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET))
                 accessories_enabled &= (0xFF ^ accessories_changed)
                 self.local_accessories_enabled |= accessories_changed
-                game.write_uchar(main_struct + EQUIPPED_ABILITIES_FLAGS_OFFSET,
+                game.write_uchar(save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET,
                                                            accessories_enabled | accessories_changed)
-        game.write_uint(main_struct + RECEIVED_ITEMS_COUNTER_OFFSET + ITEM_COUNT_OFFSET,
+        game.write_uint(save_game + RECEIVED_ITEMS_COUNTER_OFFSET + ITEM_COUNT_OFFSET,
                                                  self.highest_processed_item_index)
-        game.write_uchar(main_struct + STORED_MUSICAL_SCORE_COUNTER_OFFSET + ITEM_COUNT_OFFSET,
+        game.write_uchar(save_game + STORED_MUSICAL_SCORE_COUNTER_OFFSET + ITEM_COUNT_OFFSET,
                                                   self.stored_musical_scores)
 
 
-    def handle_remotely_cleared_locations(self, game: pymem.Pymem, main_struct: int,
+    def handle_remotely_cleared_locations(self, game: pymem.Pymem, save_game: int,
                                                 game_progression_flags: int, boss_defeated_flags: int):
         for new_remotely_cleared_location in self.checked_locations - self.locations_checked:
                         # other game collected item, clear location
             location_name = location_id_to_name[new_remotely_cleared_location]
             if location_name in DataMaps.chest_data_map.keys():
                 data = DataMaps.chest_data_map[location_name]
-                value = int(game.read_uchar(main_struct + data.offset))
+                value = int(game.read_uchar(save_game + data.offset))
                 value |= data.mask
-                game.write_uchar(main_struct + data.offset, value)
+                game.write_uchar(save_game + data.offset, value)
             elif location_name in DataMaps.character_rescue_flag_map.keys():
                 flag = DataMaps.character_rescue_flag_map[location_name]
                 game_progression_flags |= flag
-                game.write_ushort(main_struct + GAME_PROGRESSION_FLAGS_OFFSET,
+                game.write_ushort(save_game + GAME_PROGRESSION_FLAGS_OFFSET,
                                                            game_progression_flags)
             elif location_name in DataMaps.boss_defeated_flag_map.keys():
                 flag = DataMaps.boss_defeated_flag_map[location_name]
                 boss_defeated_flags |= flag
-                game.write_uint(main_struct + BOSS_DEFEATED_FLAGS, boss_defeated_flags)
+                game.write_uint(save_game + BOSS_DEFEATED_FLAGS, boss_defeated_flags)
             elif new_remotely_cleared_location in range(701, 800):
                 offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * new_remotely_cleared_location)
-                game.write_uchar(main_struct + offset + ITEM_COUNT_OFFSET, 1)
-                game.write_uchar(main_struct + offset + ITEM_NEW_OFFSET, 0)
-                game.write_ushort(main_struct + offset, 1 << 8 + 1)
-                offset = main_struct + RECIPE_CRAFTED_OFFSET
+                game.write_uchar(save_game + offset + ITEM_COUNT_OFFSET, 1)
+                game.write_uchar(save_game + offset + ITEM_NEW_OFFSET, 0)
+                game.write_ushort(save_game + offset, 1 << 8 + 1)
+                offset = save_game + RECIPE_CRAFTED_OFFSET
                 recipes = int.from_bytes(game.read_bytes(offset, 12), "little")
                 recipes |= 1 << (new_remotely_cleared_location - 700)
                 game.write_bytes(offset, recipes.to_bytes(12, "little"), 12)
