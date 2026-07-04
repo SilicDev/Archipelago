@@ -34,7 +34,7 @@ from .rules import set_rules
 
 
 def run_client(*args: str) -> None:
-    from .client import launch_client
+    from .client.client import launch_client
     launch(launch_client, name="YOHANE THE PARHELION -BLAZE in the DEEPBLUE- Client", args=args)
 
 components.append(
@@ -196,9 +196,17 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
             "craftsanity"
         )
         upgrades = []
-        for item in character_upgrade_table.keys():
-            location = self.multiworld.find_item(item, self.player)
-            upgrades.append((location.player, location.address))
+        if self.options.progressive_character_unlocks == Toggle.option_true:
+            for item in progressive_character_table.keys():
+                upgrades.extend([
+                    [
+                        (location.player, location.address)
+                        for location in self.multiworld.find_item_locations(item, self.player)
+                    ] for item in progressive_character_table.keys()])
+        else:
+            for item in character_upgrade_table.keys():
+                location = self.multiworld.find_item(item, self.player)
+                upgrades.append([(location.player, location.address)])
         slot_data["upgrades"] = upgrades
         slot_data["recipes"] = self.recipe_list.get_bytes().hex()
         return slot_data

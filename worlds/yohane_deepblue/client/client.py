@@ -16,8 +16,8 @@ from NetUtils import ClientStatus, NetworkItem
 from Options import Toggle
 from Utils import gui_enabled
 
-from .data import DataMaps, ItemNames
-from .items import (
+from ..data import DataMaps, ItemNames
+from ..items import (
     accessories_table,
     character_upgrade_table,
     equips_set,
@@ -27,66 +27,15 @@ from .items import (
     weapons_table,
     yen_set,
 )
-from .items import lookup_id_to_name as item_id_to_name
-from .locations import location_table
-from .locations import lookup_id_to_name as location_id_to_name
-from .options import UpgradeHints
-from .pymem_ex import PymemEX
+from ..items import lookup_id_to_name as item_id_to_name
+from ..locations import location_table
+from ..locations import lookup_id_to_name as location_id_to_name
+from ..options import UpgradeHints
+from ..pymem_ex import PymemEX
+from . import addresses
 
 if TYPE_CHECKING:
     import kvui  # noqa: F401
-
-FLAGS_STRUCT_BASE_OFFSET = 0x0115B498
-MAIN_BASE_OFFSET = 0x0166B418
-
-CURRENT_SAVE_OFFSET = 0x51000
-SAVE_GAME_SIZE = 0x7c00
-
-YEN_OFFSET = 0x50
-GAME_FLAGS_OFFSET = 0x58
-CHARACTER_UNLOCK_FLAGS_OFFSET = 0x64
-GAME_PROGRESSION_FLAGS_OFFSET = 0x71
-CHARACTER_QUEST_FLAGS_OFFSET = 0x73
-BOSS_DEFEATED_FLAGS = 0x7D
-DUNGEON_FLAGS_OFFSET = 0x24E
-INVENTORY_OFFSET = 0x1560
-ITEM_SECOND_MAGIC_OFFSET = 0x08
-ITEM_COUNT_OFFSET = 0x10
-ITEM_NEW_OFFSET = 0x11
-ITEM_STRUCT_SIZE = 0x18
-EQUIPPED_ABILITIES_FLAGS_OFFSET = 0x7560
-MAP_AREA_OFFSET = 0x75EC
-MAP_ROOM_OFFSET = 0x75EF
-MUSICAL_SCORES_INVENTORY_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 419) # Musical Score
-RECIPE_CRAFTED_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 230) # Compound Lens (unused) 0x1590
-RECEIVED_ITEMS_COUNTER_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 233) # Supreme Squid Ink (Unused)
-STORED_MUSICAL_SCORE_COUNTER_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 237) # Dried Jellyfish (Unused)
-SLOT_NAME_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 240) # Demecore (Unused)
-SEED_NAME_OFFSET = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * 630) # After weapons
-
-PTR_FLAGS_STRUCT = [0x28, 0x8, 0x8]
-OFFSET_AREA = 0xA0
-OFFSET_AREA_RELOAD = 0xCC
-OFFSET_IN_CREDITS = 0xCE
-OFFSET_INGAME_TIME = 0x238
-OFFSET_IS_DEAD = 0x360
-
-YOHANE_PTR = [-0xFE8, 0x148, 0x8, 0x10, 0x28, 0x58]
-CURRENT_HP_OFFSET = 0x28
-MAX_HP_OFFSET = 0x2C
-CURRENT_DP_OFFSET = 0x30
-MAX_DP_OFFSET = 0x34
-
-LAST_RECIPE = 0x1136634
-RECIPE_PATCH_LOCATION = 0x6a3b6c
-RECIPE_PATCH = b"\xe9\x97\xa6\x66\x00"
-RECIPE_END_PATCH_LOCATION = 0xd0e200
-#     Patch:          ------------------------------------------------------------------------------------------------
-RECIPE_END_PATCH = (b"\x34\x66\x13\x41\x01\x00\x00\x00\x48\x8b\x44\x24\x38\x8b\x58\x2c\x49\xc7\xc0\x18\x00\x00\x00\x48"
-                    b"\xc7\xc0\xe6\x00\x00\x00\x4c\x0f\xaf\xc0\x89\xd8\x83\xf8\x40\x7c\x07\x49\x83\xc0\x08\x83\xe8\x40"
-                    b"\x51\x88\xc1\xb8\x01\x00\x00\x00\x48\xd3\xe0\x49\x01\xf0\x49\x8b\x08\x48\x09\xc8\x49\x89\x00\x59"
-                    b"\x48\x8b\x05\x51\x13\x47\x00\x0f\xaf\x58\x04\x48\x03\x1d\x56\x13\x47\x00\x4c\x8b\x05\x9f\xff\xff"
-                    b"\xff\x49\x89\x18\xe9\x1e\x59\x99\xff")
 
 
 class ConnectionStatus(enum.IntEnum):
@@ -96,6 +45,18 @@ class ConnectionStatus(enum.IntEnum):
 
 class YohaneDeepblueCommandProcessor(ClientCommandProcessor):
     ctx: "YohaneDeepblueContext"
+
+    def _cmd_patch(self) -> None:
+        """
+        Manually patch the game.
+        """
+        if self.ctx.game_process is not None:
+            from .patch import apply_patches
+            apply_patches(self.ctx, self.ctx.game_process)
+            logger.info("Patches applied")
+        else:
+            logger.warning("Must be connected to the game!")
+
 
     def _cmd_debug(self) -> None:
         """
@@ -181,6 +142,7 @@ class YohaneDeepblueCommandProcessor(ClientCommandProcessor):
         self.ctx.highest_received_item_index = 0
         self.ctx.local_received_items = {}
 
+
 class YohaneDeepblueContext(CommonContext):
     game = "YOHANE THE PARHELION -BLAZE in the DEEPBLUE-"
     items_handling = 0b111  # full remote
@@ -201,6 +163,9 @@ class YohaneDeepblueContext(CommonContext):
     local_received_items: dict[str, int]
     local_accessories_enabled: int = 0
     hinted_quest_flags: int = 0
+    location_info_received: list[NetworkItem]
+    received_upgrade_locations: list[tuple[int, int]]
+    thread: int = -1
 
     last_map_area = -1
     last_map_room = -1
@@ -237,8 +202,10 @@ class YohaneDeepblueContext(CommonContext):
     def __init__(self, server_address: str | None = None, password: str | None = None) -> None:
         super().__init__(server_address, password)
 
+        self.location_info_received = []
         self.queued_locations = []
         self.local_received_items = {}
+        self.received_upgrade_locations = []
         self.slot_data = {}
         self.death_link_group = ""
         self.damage_link_group = ""
@@ -267,39 +234,39 @@ class YohaneDeepblueContext(CommonContext):
                     await asyncio.sleep(1)
                     continue
                 try:
-                    flags_struct = _resolve_pointer(self, self.get_base_address(FLAGS_STRUCT_BASE_OFFSET), PTR_FLAGS_STRUCT)
+                    flags_struct = _resolve_pointer(self, self.get_base_address(addresses.FLAGS_STRUCT_BASE_OFFSET), addresses.PTR_FLAGS_STRUCT)
                     if flags_struct == -1:
                         logger.info("ERROR: Couldn't find flags struct!")
                         await asyncio.sleep(1)
                         continue
 
-                    ingame_time = int(self.game_process.read_uint(flags_struct + OFFSET_INGAME_TIME))
+                    ingame_time = int(self.game_process.read_uint(flags_struct + addresses.OFFSET_INGAME_TIME))
                     if ingame_time <= 0:
                         await asyncio.sleep(0.1)
                         continue
 
-                    main_struct = self.get_base_address(MAIN_BASE_OFFSET)
+                    main_struct = self.get_base_address(addresses.MAIN_BASE_OFFSET)
                     if main_struct == -1:
                         logger.info("ERROR: Couldn't find main data struct!")
                         await asyncio.sleep(1)
                         continue
-                    save_game = main_struct + CURRENT_SAVE_OFFSET
+                    save_game = main_struct + addresses.CURRENT_SAVE_OFFSET
 
-                    slot_name = str(self.game_process.read_string(save_game + SLOT_NAME_OFFSET, 16))
+                    slot_name = str(self.game_process.read_string(save_game + addresses.SLOT_NAME_OFFSET, 16))
                     if len(slot_name) != 0 and slot_name != self.slot_info[self.slot].name:
                         self.valid_slot = False
                         logger.warning("Savefile slot name doesn't match slot name! Restart the client to retry")
                         continue
-                    seed_name = str(self.game_process.read_string(save_game + SEED_NAME_OFFSET, ITEM_STRUCT_SIZE*2))
-                    if len(seed_name) != 0 and seed_name != self.seed_name[:ITEM_STRUCT_SIZE*2]:
+                    seed_name = str(self.game_process.read_string(save_game + addresses.SEED_NAME_OFFSET, addresses.ITEM_STRUCT_SIZE*2))
+                    if len(seed_name) != 0 and seed_name != self.seed_name[:addresses.ITEM_STRUCT_SIZE*2]:
                         self.valid_slot = False
                         logger.warning("Savefile seed name doesn't match seed name! Restart the client to retry")
                         continue
-                    game_progression_flags = int(self.game_process.read_ushort(save_game + GAME_PROGRESSION_FLAGS_OFFSET))
+                    game_progression_flags = int(self.game_process.read_ushort(save_game + addresses.GAME_PROGRESSION_FLAGS_OFFSET))
                     if len(slot_name) == 0 and len(seed_name) == 0:
                         if game_progression_flags <= 6:
-                            self.game_process.write_string(save_game + SLOT_NAME_OFFSET, self.slot_info[self.slot].name)
-                            self.game_process.write_string(save_game + SEED_NAME_OFFSET, self.seed_name[:ITEM_STRUCT_SIZE*2])
+                            self.game_process.write_string(save_game + addresses.SLOT_NAME_OFFSET, self.slot_info[self.slot].name)
+                            self.game_process.write_string(save_game + addresses.SEED_NAME_OFFSET, self.seed_name[:addresses.ITEM_STRUCT_SIZE*2])
                         else:
                             self.valid_slot = False
                             logger.warning("Loaded non-empty save! Restart the client to retry")
@@ -308,7 +275,7 @@ class YohaneDeepblueContext(CommonContext):
                     if not self.game_patched:
                         self.patch_game()
 
-                    is_dead = self.game_process.read_uchar(flags_struct + OFFSET_IS_DEAD)
+                    is_dead = self.game_process.read_uchar(flags_struct + addresses.OFFSET_IS_DEAD)
                     if self.deathlink_enabled:
                         if not is_dead and not self.can_send_deathlink:
                             self.can_send_deathlink = True
@@ -321,22 +288,22 @@ class YohaneDeepblueContext(CommonContext):
                         self.threadstack0 = threadstack
                     await self.detect_damage(self.game_process)
 
-                    map_area = int(self.game_process.read_uchar(save_game + MAP_AREA_OFFSET))
-                    map_room = int(self.game_process.read_uchar(save_game + MAP_ROOM_OFFSET))
+                    map_area = int(self.game_process.read_uchar(save_game + addresses.MAP_AREA_OFFSET))
+                    map_room = int(self.game_process.read_uchar(save_game + addresses.MAP_ROOM_OFFSET))
                     await self.handle_map_update(map_area, map_room)
-                    game_flags = int(self.game_process.read_uchar(save_game + GAME_FLAGS_OFFSET))
+                    game_flags = int(self.game_process.read_uchar(save_game + addresses.GAME_FLAGS_OFFSET))
                     in_parlor = game_flags & 0x8 != 0
                     if in_parlor != self.in_parlor:
                         if in_parlor:
                             logger.info("Yohane safely arrived in her Fortune Parlor")
                         self.in_parlor = in_parlor
 
-                    dungeon_flags = int(self.game_process.read_uchar(save_game + DUNGEON_FLAGS_OFFSET))
+                    dungeon_flags = int(self.game_process.read_uchar(save_game + addresses.DUNGEON_FLAGS_OFFSET))
                     if self.slot_data["early_chika_blocks_moved"] == Toggle.option_true and dungeon_flags & 0x2 == 0:
                         if self.debug_log:
                             logger.info("Setting Chika Block flags")
                         dungeon_flags |= 0x2
-                        self.game_process.write_uchar(save_game + DUNGEON_FLAGS_OFFSET, dungeon_flags)
+                        self.game_process.write_uchar(save_game + addresses.DUNGEON_FLAGS_OFFSET, dungeon_flags)
 
                     for location in DataMaps.character_rescue_flag_map:
                         if location_table[location] in self.checked_locations:
@@ -347,9 +314,9 @@ class YohaneDeepblueContext(CommonContext):
                     if (map_area == 1 and map_room in [9, 10] and ItemNames.boss_token in self.local_received_items and
                             self.local_received_items[ItemNames.boss_token] >= 8):
                         game_progression_flags |= 0x8000 # Spawns Infernal Altar cutscene
-                    self.game_process.write_ushort(save_game + GAME_PROGRESSION_FLAGS_OFFSET, game_progression_flags)
+                    self.game_process.write_ushort(save_game + addresses.GAME_PROGRESSION_FLAGS_OFFSET, game_progression_flags)
 
-                    boss_defeated_flags = int(self.game_process.read_uint(save_game + BOSS_DEFEATED_FLAGS))
+                    boss_defeated_flags = int(self.game_process.read_uint(save_game + addresses.BOSS_DEFEATED_FLAGS))
                     for location in DataMaps.boss_defeated_flag_map:
                         if location_table[location] in self.checked_locations:
                             continue
@@ -364,7 +331,7 @@ class YohaneDeepblueContext(CommonContext):
 
                     self.handle_chest_locations(self.game_process, save_game)
 
-                    recipes = int.from_bytes(self.game_process.read_bytes(save_game + RECIPE_CRAFTED_OFFSET, 12), "little")
+                    recipes = int.from_bytes(self.game_process.read_bytes(save_game + addresses.RECIPE_CRAFTED_OFFSET, 12), "little")
                     for i in range(93):
                         if 1 << (i + 1) & recipes != 0:
                             self.queued_locations.append(701+i)
@@ -374,9 +341,9 @@ class YohaneDeepblueContext(CommonContext):
                         self.locations_checked.add(location)
                         await self.check_locations({location})
 
-                    stored_musical_scores_addr = save_game + STORED_MUSICAL_SCORE_COUNTER_OFFSET + ITEM_COUNT_OFFSET
+                    stored_musical_scores_addr = save_game + addresses.STORED_MUSICAL_SCORE_COUNTER_OFFSET + addresses.ITEM_COUNT_OFFSET
                     self.stored_musical_scores = int(self.game_process.read_uchar(stored_musical_scores_addr))
-                    inventory_musical_score_addr = save_game + MUSICAL_SCORES_INVENTORY_OFFSET + ITEM_COUNT_OFFSET
+                    inventory_musical_score_addr = save_game + addresses.MUSICAL_SCORES_INVENTORY_OFFSET + addresses.ITEM_COUNT_OFFSET
                     musical_scores = int(self.game_process.read_uchar(inventory_musical_score_addr))
                     if musical_scores == 0 and self.stored_musical_scores > 0:
                         self.game_process.write_uchar(inventory_musical_score_addr, 1)
@@ -387,7 +354,7 @@ class YohaneDeepblueContext(CommonContext):
                     self.handle_remotely_cleared_locations(self.game_process, save_game,
                                                      game_progression_flags, boss_defeated_flags)
 
-                    in_credits = self.game_process.read_uchar(flags_struct + OFFSET_IN_CREDITS)
+                    in_credits = self.game_process.read_uchar(flags_struct + addresses.OFFSET_IN_CREDITS)
                     if (in_credits != 0 or game_flags & 0x1 != 0) and not self.finished_game:
                         await self.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
                         self.finished_game = True
@@ -425,7 +392,7 @@ class YohaneDeepblueContext(CommonContext):
 
 
     async def handle_characters(self, game: pymem.Pymem, save_game: int):
-        character_quest_flags = int(game.read_uint(save_game + CHARACTER_QUEST_FLAGS_OFFSET))
+        character_quest_flags = int(game.read_uint(save_game + addresses.CHARACTER_QUEST_FLAGS_OFFSET))
         for location in DataMaps.character_quest_flag_map:
             if location_table[location] in self.checked_locations:
                 continue
@@ -437,16 +404,24 @@ class YohaneDeepblueContext(CommonContext):
                 if UpgradeHints._option_ap in self.slot_data["upgrade_hints"]:
                     item = DataMaps.chest_data_map[location].vanilla_item
                     if item not in self.local_received_items:
-                        real_location = self.slot_data["upgrades"][item_table[item].code - 1]
-                        if real_location[1] is not None:
-                            await self.send_msgs([{
-                                            "cmd": "CreateHints",
-                                            "player": real_location[0],
-                                            "locations": [real_location[1]]
-                                        }])
+                        real_locations = self.slot_data["upgrades"][item_table[item].code - 1]
+                        for real_location in real_locations:
+                            if real_location[1] is not None:
+                                found = False
+                                for upgrade_location in self.received_upgrade_locations:
+                                    if (real_location[0] == upgrade_location[0] and
+                                        real_location[1] == upgrade_location[1]):
+                                        found = True
+                                        break
+                                if not found:
+                                    await self.send_msgs([{
+                                                    "cmd": "CreateHints",
+                                                    "player": real_location[0],
+                                                    "locations": [real_location[1]]
+                                                }])
         character_quest_flags &= 0xDB6DB6FF # Disable collection flags
 
-        character_unlock_flags = int(game.read_uint(save_game + CHARACTER_UNLOCK_FLAGS_OFFSET))
+        character_unlock_flags = int(game.read_uint(save_game + addresses.CHARACTER_UNLOCK_FLAGS_OFFSET))
         character_unlock_flags &= 0xFFD5555F
         for item in DataMaps.character_item_flags_map:
             flag = DataMaps.character_item_flags_map[item]
@@ -459,41 +434,41 @@ class YohaneDeepblueContext(CommonContext):
                 if upgrade is not None:
                     self.queued_locations.append(location_table[DataMaps.upgrade_item_to_quest_location_map[upgrade]])
 
-        game.write_uint(save_game + CHARACTER_UNLOCK_FLAGS_OFFSET, character_unlock_flags)
-        game.write_uint(save_game + CHARACTER_QUEST_FLAGS_OFFSET, character_quest_flags)
+        game.write_uint(save_game + addresses.CHARACTER_UNLOCK_FLAGS_OFFSET, character_unlock_flags)
+        game.write_uint(save_game + addresses.CHARACTER_QUEST_FLAGS_OFFSET, character_quest_flags)
 
 
     def handle_character_upgrades(self, game: pymem.Pymem, save_game: int, map_area: int, map_room: int):
         for item in character_upgrade_table.keys():
             item_data = character_upgrade_table[item]
             if item_data.code is not None: # events aren't real
-                offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item_data.code)
+                offset = addresses.INVENTORY_OFFSET + (addresses.ITEM_STRUCT_SIZE * item_data.code)
                 room = DataMaps.character_upgrade_to_area_room[item]
                 if (item in self.local_received_items and
                                 (not (room[0] == map_area and map_room in room[1]) or
                                     location_table[room[2]] in self.checked_locations)):
-                    game.write_uchar(save_game + offset + ITEM_COUNT_OFFSET, 1)
+                    game.write_uchar(save_game + offset + addresses.ITEM_COUNT_OFFSET, 1)
                 else:
-                    game.write_uchar(save_game + offset + ITEM_COUNT_OFFSET, 0)
+                    game.write_uchar(save_game + offset + addresses.ITEM_COUNT_OFFSET, 0)
 
 
     def handle_unique_accessories(self, game: pymem.Pymem, save_game: int):
         for item in unique_accessories_table.keys():
             item_data = unique_accessories_table[item]
             if item_data.code is not None: # events aren't real
-                offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item_data.code)
-                addr = save_game + offset + ITEM_COUNT_OFFSET
+                offset = addresses.INVENTORY_OFFSET + (addresses.ITEM_STRUCT_SIZE * item_data.code)
+                addr = save_game + offset + addresses.ITEM_COUNT_OFFSET
                 if item in self.local_received_items:
                     game.write_uchar(addr, 1)
                     if item == ItemNames.extra_accessory_slot:
                         if self.local_received_items[item] > 1:
-                            game.write_uchar(addr + ITEM_STRUCT_SIZE, 1)
+                            game.write_uchar(addr + addresses.ITEM_STRUCT_SIZE, 1)
                         else:
-                            game.write_uchar(addr + ITEM_STRUCT_SIZE, 0)
+                            game.write_uchar(addr + addresses.ITEM_STRUCT_SIZE, 0)
                 else:
                     game.write_uchar(addr, 0)
                     if item == ItemNames.extra_accessory_slot:
-                        game.write_uchar(addr + ITEM_STRUCT_SIZE, 0)
+                        game.write_uchar(addr + addresses.ITEM_STRUCT_SIZE, 0)
 
 
     def handle_chest_locations(self, game: pymem.Pymem, save_game: int):
@@ -512,14 +487,14 @@ class YohaneDeepblueContext(CommonContext):
                 self.queued_locations.append(location_table[location])
                 vanilla_item_code = item_table[data.vanilla_item].code
                 if data.vanilla_item in stackables_set and vanilla_item_code is not None:
-                    item_offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * vanilla_item_code)
-                    item_count = int(game.read_uchar(save_game + item_offset + ITEM_COUNT_OFFSET))
+                    item_offset = addresses.INVENTORY_OFFSET + (addresses.ITEM_STRUCT_SIZE * vanilla_item_code)
+                    item_count = int(game.read_uchar(save_game + item_offset + addresses.ITEM_COUNT_OFFSET))
                     if item_count != 0:
                         item_count -= 1
-                    game.write_uchar(save_game + item_offset + ITEM_COUNT_OFFSET, item_count)
+                    game.write_uchar(save_game + item_offset + addresses.ITEM_COUNT_OFFSET, item_count)
                     game.write_ushort(save_game + item_offset, item_count << 8 + item_count)
             if location in DataMaps.important_item_chests:
-                addr = save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET
+                addr = save_game + addresses.EQUIPPED_ABILITIES_FLAGS_OFFSET
                 accessories_enabled = int(game.read_uchar(addr))
                 accessories_enabled &= (0xF8 | self.local_accessories_enabled)
                 game.write_uchar(addr, accessories_enabled)
@@ -528,14 +503,14 @@ class YohaneDeepblueContext(CommonContext):
     async def detect_damage(self, game: pymem.Pymem):
         if self.threadstack0 >= 0:
             try:
-                self.yohane_pointer = _resolve_pointer(self, self.threadstack0, YOHANE_PTR)
+                self.yohane_pointer = _resolve_pointer(self, self.threadstack0, addresses.YOHANE_PTR)
             except Exception: # threadstack doesn't always point to this
                             #logger.info(e)
                 pass
         if self.yohane_pointer >= 0:
             try:
-                health = int(game.read_ulong(self.yohane_pointer + CURRENT_HP_OFFSET))
-                max_health = int(game.read_ulong(self.yohane_pointer + MAX_HP_OFFSET))
+                health = int(game.read_ulong(self.yohane_pointer + addresses.CURRENT_HP_OFFSET))
+                max_health = int(game.read_ulong(self.yohane_pointer + addresses.MAX_HP_OFFSET))
                 if self.damagelink_enabled:
                     if (health < self.last_health and max_health == self.last_max_health and
                                         self.can_send_damagelink):
@@ -550,7 +525,7 @@ class YohaneDeepblueContext(CommonContext):
 
 
     def handle_items_received(self, game: pymem.Pymem, save_game: int):
-        received_items_addr = save_game + RECEIVED_ITEMS_COUNTER_OFFSET + ITEM_COUNT_OFFSET
+        received_items_addr = save_game + addresses.RECEIVED_ITEMS_COUNTER_OFFSET + addresses.ITEM_COUNT_OFFSET
         self.highest_processed_item_index = int(game.read_uint(received_items_addr))
 
         new_items = self.items_received[self.highest_received_item_index :]
@@ -566,6 +541,7 @@ class YohaneDeepblueContext(CommonContext):
             else:
                 self.local_received_items[item_name] += 1
             if item_name in DataMaps.progressive_to_character_item_map:
+                self.received_upgrade_locations.append((item.player, item.location))
                 items = DataMaps.progressive_to_character_item_map[item_name]
                 if self.local_received_items[item_name] > 0:
                     self.local_received_items[items[0]] = 1
@@ -578,24 +554,20 @@ class YohaneDeepblueContext(CommonContext):
 
                 new_item = False # local crafting, no real item
 
-                        # receive item
+            # receive item
             if new_item:
+                self.thread = self.start_thread(game.base_address + addresses.AP_ADDITEM_FUNC, item.item)
                 if item_name == ItemNames.musical_score:
                     self.stored_musical_scores += 1
                 elif item_name in stackables_set:
-                    offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item.item)
-                    value = int(game.read_uchar(save_game + offset + ITEM_COUNT_OFFSET)) + 1 # make bundles?
-                    game.write_uchar(save_game + offset + ITEM_COUNT_OFFSET, value)
-                    game.write_uchar(save_game + offset + ITEM_NEW_OFFSET, 0)
-                    game.write_ushort(save_game + offset, value << 8 + value)
                     if item_name in accessories_table.keys():
                         slots = 1
                         if ItemNames.extra_accessory_slot in self.local_received_items:
                             slots += self.local_received_items[ItemNames.extra_accessory_slot]
                         for i in range(min(slots, 3)):
-                            accessory = int(game.read_ushort(save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET + 8 + (i*4)))
+                            accessory = int(game.read_ushort(save_game + addresses.EQUIPPED_ABILITIES_FLAGS_OFFSET + 8 + (i*4)))
                             if accessory == 0:
-                                game.write_ushort(save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET + 8 + (i*4), item.item)
+                                game.write_ushort(save_game + addresses.EQUIPPED_ABILITIES_FLAGS_OFFSET + 8 + (i*4), item.item)
                                 break
                 elif item_name in yen_set:
                     amount = 0
@@ -608,19 +580,15 @@ class YohaneDeepblueContext(CommonContext):
                             amount = 50000
                         case _:
                             raise ValueError(f"Unknown yen item '{item_name}' received!")
-                    yen = int(game.read_uint(save_game + YEN_OFFSET))
+                    yen = int(game.read_uint(save_game + addresses.YEN_OFFSET))
                     yen += amount
-                    game.write_uint(save_game + YEN_OFFSET, yen)
+                    game.write_uint(save_game + addresses.YEN_OFFSET, yen)
+                    #self.thread = game.start_thread(game.base_address + addresses.DISPLAY_YEN_MESSAGE_FUNC, amount)
 
             if item_name in weapons_table.keys():
-                offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * item.item)
-                value = int(game.read_uchar(save_game + offset + ITEM_COUNT_OFFSET)) + 1
-                game.write_uchar(save_game + offset + ITEM_COUNT_OFFSET, value)
-                game.write_uchar(save_game + offset + ITEM_NEW_OFFSET, 0)
-                game.write_ushort(save_game + offset, value << 8 + value)
-                weapon = int(game.read_ushort(save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET + 4))
+                weapon = int(game.read_ushort(save_game + addresses.EQUIPPED_ABILITIES_FLAGS_OFFSET + 4))
                 if weapon == 0:
-                    game.write_ushort(save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET + 4, item.item)
+                    game.write_ushort(save_game + addresses.EQUIPPED_ABILITIES_FLAGS_OFFSET + 4, item.item)
 
 
             accessories_changed = 0
@@ -631,14 +599,14 @@ class YohaneDeepblueContext(CommonContext):
             elif item_name == ItemNames.sea_deitys_charm:
                 accessories_changed |= 0x04
             if accessories_changed != 0:
-                accessories_enabled = int(game.read_uchar(save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET))
+                accessories_enabled = int(game.read_uchar(save_game + addresses.EQUIPPED_ABILITIES_FLAGS_OFFSET))
                 accessories_enabled &= (0xFF ^ accessories_changed)
                 self.local_accessories_enabled |= accessories_changed
-                game.write_uchar(save_game + EQUIPPED_ABILITIES_FLAGS_OFFSET,
+                game.write_uchar(save_game + addresses.EQUIPPED_ABILITIES_FLAGS_OFFSET,
                                                            accessories_enabled | accessories_changed)
-        game.write_uint(save_game + RECEIVED_ITEMS_COUNTER_OFFSET + ITEM_COUNT_OFFSET,
+        game.write_uint(save_game + addresses.RECEIVED_ITEMS_COUNTER_OFFSET + addresses.ITEM_COUNT_OFFSET,
                                                  self.highest_processed_item_index)
-        game.write_uchar(save_game + STORED_MUSICAL_SCORE_COUNTER_OFFSET + ITEM_COUNT_OFFSET,
+        game.write_uchar(save_game + addresses.STORED_MUSICAL_SCORE_COUNTER_OFFSET + addresses.ITEM_COUNT_OFFSET,
                                                   self.stored_musical_scores)
 
 
@@ -655,18 +623,18 @@ class YohaneDeepblueContext(CommonContext):
             elif location_name in DataMaps.character_rescue_flag_map.keys():
                 flag = DataMaps.character_rescue_flag_map[location_name]
                 game_progression_flags |= flag
-                game.write_ushort(save_game + GAME_PROGRESSION_FLAGS_OFFSET,
+                game.write_ushort(save_game + addresses.GAME_PROGRESSION_FLAGS_OFFSET,
                                                            game_progression_flags)
             elif location_name in DataMaps.boss_defeated_flag_map.keys():
                 flag = DataMaps.boss_defeated_flag_map[location_name]
                 boss_defeated_flags |= flag
-                game.write_uint(save_game + BOSS_DEFEATED_FLAGS, boss_defeated_flags)
+                game.write_uint(save_game + addresses.BOSS_DEFEATED_FLAGS, boss_defeated_flags)
             elif new_remotely_cleared_location in range(701, 800):
-                offset = INVENTORY_OFFSET + (ITEM_STRUCT_SIZE * new_remotely_cleared_location)
-                game.write_uchar(save_game + offset + ITEM_COUNT_OFFSET, 1)
-                game.write_uchar(save_game + offset + ITEM_NEW_OFFSET, 0)
+                offset = addresses.INVENTORY_OFFSET + (addresses.ITEM_STRUCT_SIZE * new_remotely_cleared_location)
+                game.write_uchar(save_game + offset + addresses.ITEM_COUNT_OFFSET, 1)
+                game.write_uchar(save_game + offset + addresses.ITEM_NEW_OFFSET, 0)
                 game.write_ushort(save_game + offset, 1 << 8 + 1)
-                offset = save_game + RECIPE_CRAFTED_OFFSET
+                offset = save_game + addresses.RECIPE_CRAFTED_OFFSET
                 recipes = int.from_bytes(game.read_bytes(offset, 12), "little")
                 recipes |= 1 << (new_remotely_cleared_location - 700)
                 game.write_bytes(offset, recipes.to_bytes(12, "little"), 12)
@@ -693,7 +661,7 @@ class YohaneDeepblueContext(CommonContext):
 
     def on_package(self, cmd: str, args: dict) -> None:
         if cmd == "Connected":
-            if self.last_connected_slot is not None:
+            if self.last_connected_slot is not None and self.last_connected_slot != self.slot:
                 self.valid_slot = False
                 logger.warning("Connected to a different slot than last, aborting! Restart the client to retry")
                 return
@@ -736,17 +704,8 @@ class YohaneDeepblueContext(CommonContext):
             if f"SharedDamage{self.damage_link_group}" in tags and self.last_damage_link != args["data"]["time"]:
                 self.on_damagelink(args["data"])
         elif cmd == "LocationInfo":
-            found_items: list[NetworkItem] = args["locations"]
-            if self.game_process: # TODO: delay this if disconnected
-                recipe_offset = self.game_process.base_address + LAST_RECIPE
-                for item in found_items:
-                    if item.location in range(701, 800):
-                        if item.player == self.slot and item.item < 1000:
-                            self.game_process.write_int(recipe_offset + (item.location - 700)*0x30 + 0x8, item.item)
-                        else:
-                            self.game_process.write_int(recipe_offset + (item.location - 700)*0x30 + 0x8, item.location)
+            self.location_info_received = args["locations"]
         elif cmd == "RoomInfo":
-            print(args["seed_name"])
             if self.seed_name is None:
                 self.seed_name = args["seed_name"]
             elif self.seed_name != args["seed_name"]:
@@ -792,9 +751,9 @@ class YohaneDeepblueContext(CommonContext):
     def on_deathlink(self, data: dict[str, Any]) -> None:
         if self.game_process is not None:
             _text = data.get("cause", "") # for ingame display
-            flags_struct = _resolve_pointer(self, self.get_base_address(FLAGS_STRUCT_BASE_OFFSET), PTR_FLAGS_STRUCT)
-            self.game_process.write_uchar(flags_struct + OFFSET_IS_DEAD, 1)
-            self.game_process.write_uchar(flags_struct + OFFSET_AREA_RELOAD, 1)
+            flags_struct = _resolve_pointer(self, self.get_base_address(addresses.FLAGS_STRUCT_BASE_OFFSET), addresses.PTR_FLAGS_STRUCT)
+            self.game_process.write_uchar(flags_struct + addresses.OFFSET_IS_DEAD, 1)
+            self.game_process.write_uchar(flags_struct + addresses.OFFSET_AREA_RELOAD, 1)
             self.can_send_deathlink = False
         return super().on_deathlink(data)
 
@@ -840,9 +799,9 @@ class YohaneDeepblueContext(CommonContext):
             _text = data.get("cause", "") # for ingame display
             damage = data.get("damage_points", 0)
             try:
-                health = int(self.game_process.read_ulong(self.yohane_pointer + CURRENT_HP_OFFSET))
+                health = int(self.game_process.read_ulong(self.yohane_pointer + addresses.CURRENT_HP_OFFSET))
                 health = max(0, health - damage)
-                self.game_process.write_ulong(self.yohane_pointer + CURRENT_HP_OFFSET, health)
+                self.game_process.write_ulong(self.yohane_pointer + addresses.CURRENT_HP_OFFSET, health)
                 self.can_send_damagelink = False
             except (pymem.exception.MemoryReadError, pymem.exception.ProcessError) as me:
                 pass
@@ -887,30 +846,8 @@ class YohaneDeepblueContext(CommonContext):
 
     def patch_game(self) -> None:
         if self.game_process is not None and self.valid_slot:
-            #with open("./worlds/yohane_deepblue/test/recipe_dump.bin", "w") as f:
-                #recipe_offset = self.game_process.base_address + LAST_RECIPE
-                #for i in range(93):
-                    #result = self.game_process.read_ushort(recipe_offset + (i+1)*0x30 + 0x8)
-                    #f.write(f"{result}\n")
-                    #for j in range(4):
-                        #id = self.game_process.read_ushort(recipe_offset + (i+1)*0x30 + 0x10 + j*8)
-                        #count = self.game_process.read_ushort(recipe_offset + (i+1)*0x30 + 0x14 + j*8)
-                        #f.write(f"{id}\t{count}\n")
-                    #f.write("\n")
-            self.game_process.write_bytes(self.game_process.base_address + RECIPE_PATCH_LOCATION,
-                                          RECIPE_PATCH, len(RECIPE_PATCH))
-            self.game_process.write_bytes(self.game_process.base_address + RECIPE_END_PATCH_LOCATION,
-                                          RECIPE_END_PATCH, len(RECIPE_END_PATCH))
-            self.game_process.write_longlong(self.game_process.base_address + RECIPE_END_PATCH_LOCATION,
-                                              self.game_process.base_address + LAST_RECIPE)
-            if self.recipesanity:
-                recipe_offset = self.game_process.base_address + LAST_RECIPE
-                for i in range(93):
-                    ingredients = struct.unpack_from("<hhhh", self.recipes, i*8)
-                    for j in range(len(ingredients)):
-                        ingredient = (ingredients[j] & 0x3FF) | ((ingredients[j] & 0xFC00) << (6 + 16))
-                        self.game_process.write_ulonglong(recipe_offset + (i+1)*0x30 + 0x10 + j*8, ingredient)
-            self.game_patched = True
+            from .patch import apply_patches
+            self.game_patched = apply_patches(self, self.game_process)
 
 
     def get_base_address(self, base_offset: int) -> int:
@@ -941,6 +878,27 @@ class YohaneDeepblueContext(CommonContext):
                 #logger.info(e)
                 return None
         return None
+
+    def start_thread(self, address:int, params: int|None) -> int:
+        if self.game_process is None:
+            return -1
+        if self.thread != -1:
+            pymem.ressources.kernel32.CloseHandle(self.thread)
+        params = params or 0
+        NULL_SECURITY_ATTRIBUTES = ctypes.cast(0, pymem.ressources.structure.LPSECURITY_ATTRIBUTES)
+        thread_h = pymem.ressources.kernel32.CreateRemoteThread(
+            self.game_process.process_handle,
+            NULL_SECURITY_ATTRIBUTES,
+            0,
+            address,
+            params,
+            0,
+            ctypes.byref(ctypes.c_ulong(0))
+        )
+        last_error = ctypes.windll.kernel32.GetLastError()
+        if last_error:
+            pymem.logger.warning(f"Got an error in start thread, code: {last_error}")
+        return thread_h
 
 
 def launch_client(*args: Sequence[str]) -> None:
