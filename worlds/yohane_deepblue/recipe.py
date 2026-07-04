@@ -9,7 +9,7 @@ from random import Random
 
 from Options import Toggle
 from rule_builder.options import OptionFilter
-from rule_builder.rules import CanReachRegion, Has, Rule, True_
+from rule_builder.rules import And, CanReachRegion, Has, Or, Rule, True_
 
 from .data import DataMaps, ItemNames, LocationNames
 from .items import (
@@ -203,16 +203,17 @@ class RecipeList:
         if ingredient.item_name in [ItemNames.shinestew, ItemNames.fallen_angels_tears]:
             return Has(ItemNames.mari_unlock)
         if ingredient.item_name in DataMaps.crafting_item_regions:
-            rule = True_()
+            rules = []
             for r in DataMaps.crafting_item_regions[ingredient.item_name]:
+                rule: Rule = True_()
                 if r.is_group:
-                    for region in region_groups[r.region]:
-                        rule |= CanReachRegion(region)
+                    rule = Or(*[CanReachRegion(region) for region in region_groups[r.region]])
                 else:
-                    rule |= CanReachRegion(r.region)
+                    rule = CanReachRegion(r.region)
                 if len(r.weakness) != 0:
                     rule &= Has(DataMaps.element_to_character_map[r.weakness])
-            return rule
+                rules.append(rule)
+            return And(*rules)
         if ingredient.item_name in accessories_table:
             return Has(ingredient.item_name, ingredient.amount,
                        options=[OptionFilter(Recipesanity, Toggle.option_false)], filtered_resolution=True)
