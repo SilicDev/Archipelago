@@ -290,13 +290,16 @@ class YohaneDeepblueContext(CommonContext):
 
                     map_area = int(self.game_process.read_uchar(save_game + addresses.MAP_AREA_OFFSET))
                     map_room = int(self.game_process.read_uchar(save_game + addresses.MAP_ROOM_OFFSET))
-                    await self.handle_map_update(map_area, map_room)
                     game_flags = int(self.game_process.read_uchar(save_game + addresses.GAME_FLAGS_OFFSET))
                     in_parlor = game_flags & 0x8 != 0
                     if in_parlor != self.in_parlor:
                         if in_parlor:
                             logger.info("Yohane safely arrived in her Fortune Parlor")
                         self.in_parlor = in_parlor
+                    if self.in_parlor:
+                        map_area = 0
+                        map_room = 0
+                    await self.handle_map_update(map_area, map_room)
 
                     dungeon_flags = int(self.game_process.read_uchar(save_game + addresses.DUNGEON_FLAGS_OFFSET))
                     if self.slot_data["early_chika_blocks_moved"] == Toggle.option_true and dungeon_flags & 0x2 == 0:
@@ -534,7 +537,7 @@ class YohaneDeepblueContext(CommonContext):
         for item in new_items:
             pending_messages = int(game.read_longlong(game.base_address + addresses.ITEM_MESSAGES))
             if pending_messages >= 3:
-                return
+                break
             new_item = self.highest_received_item_index >= self.highest_processed_item_index
             if new_item:
                 self.highest_processed_item_index += 1
