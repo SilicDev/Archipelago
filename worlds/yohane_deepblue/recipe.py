@@ -9,7 +9,7 @@ from random import Random
 
 from Options import Toggle
 from rule_builder.options import OptionFilter
-from rule_builder.rules import And, CanReachRegion, Has, Rule, True_
+from rule_builder.rules import And, CanReachRegion, Has, Or, Rule, True_
 
 from .data import DataMaps, ItemNames, LocationNames
 from .items import (
@@ -23,7 +23,7 @@ from .items import (
     stackables_set,
 )
 from .options import Recipesanity
-from .rules import Macro, region_group_rules
+from .rules import Macro, region_group_rules, upgraded_mari_rule
 
 recipe_ingredients = sorted(stackables_set)
 consumable_ingredients = list(consumables_table.keys())
@@ -45,7 +45,10 @@ def setup_ingredient_rules() -> None:
                 if len(r.weakness) != 0:
                     rule &= Has(DataMaps.element_to_character_map[r.weakness])
                 rules.append(rule)
-            ingredient_rules[item] = Macro(And(*rules), f"Ingredient '{item}'")
+            rule = Or(*rules)
+            if item == ItemNames.ninja_shuriken:
+                rule &= upgraded_mari_rule
+            ingredient_rules[item] = Macro(rule, f"Ingredient '{item}'")
         elif item in consumable_ingredients:
             rule = CanReachRegion(LocationNames.origin_region)
             if item in [ItemNames.shinestew, ItemNames.fallen_angels_tears]:
