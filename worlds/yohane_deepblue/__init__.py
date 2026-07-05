@@ -3,9 +3,11 @@ Archipelago World definition for YOHANE THE PARHELION -BLAZE in the DEEPBLUE-
 """
 import typing
 
-from BaseClasses import Item, ItemClassification, MultiWorld, Tutorial
+from BaseClasses import CollectionState, Item, ItemClassification, MultiWorld, Tutorial
+from NetUtils import JSONMessagePart
 from Options import Toggle
 from rule_builder.cached_world import CachedRuleBuilderWorld
+from rule_builder.rules import CustomRuleRegister
 from worlds.AutoWorld import WebWorld
 from worlds.LauncherComponents import Component, Type, components, launch
 
@@ -28,9 +30,9 @@ from .items import (
 )
 from .locations import YohaneDeepblueLocation, location_groups, location_table, setup_locations
 from .options import YohaneDeepblueOptions, yohane_deepblue_option_groups
-from .recipe import RecipeList
+from .recipe import RecipeList, ingredient_rules
 from .regions import connect_regions, create_regions
-from .rules import set_rules
+from .rules import set_rules, region_group_rules
 
 
 def run_client(*args: str) -> None:
@@ -86,16 +88,42 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
         super().__init__(multiworld, player)
         self.recipe_list = RecipeList()
 
+    def explain_rule(self, target_name: str, state: CollectionState) -> list[JSONMessagePart]:
+        from Utils import get_intended_text
+        if target_name.lower().startswith("ingredient"):
+            rules = {ingredient_rules[rule].name: ingredient_rules[rule] for rule in ingredient_rules}
+            result, usable, response = get_intended_text(target_name, rules.keys())
+            if not usable:
+                return [{"type":"text","text":response}]
+            return CustomRuleRegister.rule_macros[self.player][result].child.explain_json(state)
+        if target_name.lower().startswith("reach group"):
+            target_name = "Can " + target_name
+        if target_name.lower().startswith("can reach group"):
+            rules = {region_group_rules[rule].name: region_group_rules[rule] for rule in region_group_rules}
+            result, usable, response = get_intended_text(target_name, rules.keys())
+            if not usable:
+                return [{"type":"text","text":response}]
+            return CustomRuleRegister.rule_macros[self.player][result].child.explain_json(state)
+        return []
+
     def generate_early(self) -> None:
-        if self.options.recipesanity == Toggle.option_true:
-            # recipes
-            self.recipe_list.generate(self.random,
-                                      self.options.max_consumable_ingredient_count.value,
-                                      self.options.max_enemy_ingredient_count.value,
-                                      self.options.max_breakable_ingredient_count.value)
-            pass
+        re_gen_passthrough = getattr(self.multiworld, "re_gen_passthrough", {})
+        if re_gen_passthrough and self.game in re_gen_passthrough:
+            # Get the passed through slot data from the real generation
+            slot_data: dict[str, typing.Any] = re_gen_passthrough[self.game]
+            recipe_data = bytes.fromhex(slot_data.get("recipes", ""))
+            self.recipe_list.from_bytes(bytearray(recipe_data))
+
         else:
-            self.recipe_list.generate_default()
+            if self.options.recipesanity == Toggle.option_true:
+                # recipes
+                self.recipe_list.generate(self.random,
+                                        self.options.max_consumable_ingredient_count.value,
+                                        self.options.max_enemy_ingredient_count.value,
+                                        self.options.max_breakable_ingredient_count.value)
+                pass
+            else:
+                self.recipe_list.generate_default()
         return super().generate_early()
 
     def create_regions(self) -> None:
@@ -209,4 +237,8 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
                 upgrades.append([(location.player, location.address)])
         slot_data["upgrades"] = upgrades
         slot_data["recipes"] = self.recipe_list.get_bytes().hex()
+        return slot_data
+
+    @staticmethod
+    def interpret_slot_data(slot_data: dict[str, typing.Any]) -> dict[str, typing.Any]:
         return slot_data

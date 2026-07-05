@@ -1,9 +1,9 @@
 from Options import Toggle
-from rule_builder.rules import CanReachLocation, Filtered, Has, HasAny, OptionFilter
+from rule_builder.rules import CanReachLocation, CanReachRegion, Filtered, Has, HasAny, Macro, OptionFilter, Or, Rule
 from worlds.AutoWorld import World
 
 from .data import ItemNames, LocationNames
-from .locations import crafting_locations, location_table
+from .locations import crafting_locations, location_table, region_groups
 from .options import EarlyChikaBlockMoved, EnableYouSkips
 
 you_enabled_filter = [OptionFilter(EnableYouSkips, EnableYouSkips.option_true)]
@@ -39,6 +39,11 @@ you_skip_rule = Filtered(you_rule, options=you_enabled_filter, filtered_resoluti
 
 whip_weapon_rule = HasAny(ItemNames.threaded_blade, ItemNames.shamrock, ItemNames.demon_slayer, ItemNames.claiomh_solais)
 boss_token_rule = Has(ItemNames.boss_token, 8)
+
+region_group_rules: dict[str, Macro] = {}
+for region in region_groups:
+    region_group_rules[region] = Macro(Or(*[CanReachRegion(region) for region in region_groups[region]]),
+                                 f"Can Reach Group '{region}'")
 
 def set_rules(world: World) -> None:
     set_chest_rules(world)
