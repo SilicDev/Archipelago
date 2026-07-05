@@ -883,6 +883,7 @@ class YohaneDeepblueContext(CommonContext):
         if self.game_process is None:
             return -1
         if self.thread != -1:
+            TerminateThread(self.thread, 0)
             pymem.ressources.kernel32.CloseHandle(self.thread)
         params = params or 0
         NULL_SECURITY_ATTRIBUTES = ctypes.cast(0, pymem.ressources.structure.LPSECURITY_ATTRIBUTES)
@@ -946,3 +947,9 @@ def _resolve_pointer(ctx: YohaneDeepblueContext, base_address: int, pointer: lis
             return -1
     return address
 
+TerminateThread = pymem.ressources.kernel32.dll.TerminateThread
+TerminateThread.restype = ctypes.c_bool
+TerminateThread.argtypes = (
+    ctypes.c_void_p,
+    ctypes.c_long,
+)
