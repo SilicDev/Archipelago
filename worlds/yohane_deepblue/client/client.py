@@ -349,10 +349,12 @@ class YohaneDeepblueContext(CommonContext):
                         self.game_process.write_uchar(inventory_musical_score_addr, 1)
                         self.stored_musical_scores -= 1
 
-                    self.handle_items_received(self.game_process, save_game)
+                    area_reaload = int(self.game_process.read_uchar(flags_struct + addresses.OFFSET_AREA_RELOAD))
+                    if area_reaload == 0:
+                        self.handle_items_received(self.game_process, save_game)
 
-                    self.handle_remotely_cleared_locations(self.game_process, save_game,
-                                                     game_progression_flags, boss_defeated_flags)
+                        self.handle_remotely_cleared_locations(self.game_process, save_game,
+                                                        game_progression_flags, boss_defeated_flags)
 
                     in_credits = self.game_process.read_uchar(flags_struct + addresses.OFFSET_IN_CREDITS)
                     if (in_credits != 0 or game_flags & 0x1 != 0) and not self.finished_game:
@@ -530,6 +532,9 @@ class YohaneDeepblueContext(CommonContext):
 
         new_items = self.items_received[self.highest_received_item_index :]
         for item in new_items:
+            pending_messages = int(game.read_longlong(game.base_address + addresses.ITEM_MESSAGES))
+            if pending_messages >= 3:
+                return
             new_item = self.highest_received_item_index >= self.highest_processed_item_index
             if new_item:
                 self.highest_processed_item_index += 1
