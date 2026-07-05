@@ -11,9 +11,9 @@ from Options import (
     OptionGroup,
     OptionSet,
     PerGameCommonOptions,
+    Range,
     StartInventoryPool,
     Toggle,
-    Range
 )
 
 
@@ -76,7 +76,7 @@ class Craftsanity(Toggle):
     """
     If `true` randomizes crafting results and adds their normal results to the item pool.
 
-    WARNING: this setting has no logic yet and may result in unbeatable seed.
+    WARNING: the logic for this setting is not final yet and may result in unbeatable seed.
     """
     display_name = "Craftsanity"
 
@@ -85,7 +85,7 @@ class Recipesanity(Toggle):
     """
     If `true` randomizes crafting recipes.
 
-    WARNING: this setting has no logic yet and may result in unbeatable seed.
+    WARNING: the logic for this setting is not final yet and may result in unbeatable seed.
     """
     display_name = "Recipesanity"
 
