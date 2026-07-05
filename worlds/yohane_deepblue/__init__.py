@@ -7,7 +7,6 @@ from BaseClasses import CollectionState, Item, ItemClassification, MultiWorld, T
 from NetUtils import JSONMessagePart
 from Options import Toggle
 from rule_builder.cached_world import CachedRuleBuilderWorld
-from rule_builder.rules import CustomRuleRegister
 from worlds.AutoWorld import WebWorld
 from worlds.LauncherComponents import Component, Type, components, launch
 
@@ -32,7 +31,7 @@ from .locations import YohaneDeepblueLocation, location_groups, location_table, 
 from .options import YohaneDeepblueOptions, yohane_deepblue_option_groups
 from .recipe import RecipeList, ingredient_rules
 from .regions import connect_regions, create_regions
-from .rules import set_rules, region_group_rules
+from .rules import region_group_rules, set_rules, macros
 
 
 def run_client(*args: str) -> None:
@@ -95,7 +94,7 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
             result, usable, response = get_intended_text(target_name, rules.keys())
             if not usable:
                 return [{"type":"text","text":response}]
-            return CustomRuleRegister.rule_macros[self.player][result].child.explain_json(state)
+            return macros[result].child.explain_json(state)
         if target_name.lower().startswith("reach group"):
             target_name = "Can " + target_name
         if target_name.lower().startswith("can reach group"):
@@ -103,7 +102,7 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
             result, usable, response = get_intended_text(target_name, rules.keys())
             if not usable:
                 return [{"type":"text","text":response}]
-            return CustomRuleRegister.rule_macros[self.player][result].child.explain_json(state)
+            return macros[result].child.explain_json(state)
         return []
 
     def generate_early(self) -> None:

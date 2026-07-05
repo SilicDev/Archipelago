@@ -9,7 +9,7 @@ from random import Random
 
 from Options import Toggle
 from rule_builder.options import OptionFilter
-from rule_builder.rules import And, CanReachRegion, Has, Macro, Rule, True_
+from rule_builder.rules import And, CanReachRegion, Has, Rule, True_
 
 from .data import DataMaps, ItemNames, LocationNames
 from .items import (
@@ -23,7 +23,7 @@ from .items import (
     stackables_set,
 )
 from .options import Recipesanity
-from .rules import region_group_rules
+from .rules import Macro, region_group_rules
 
 recipe_ingredients = sorted(stackables_set)
 consumable_ingredients = list(consumables_table.keys())

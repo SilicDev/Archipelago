@@ -1,5 +1,10 @@
+import dataclasses
+from typing import Any, Mapping, Self, override
+
+from BaseClasses import CollectionState
+from NetUtils import JSONMessagePart
 from Options import Toggle
-from rule_builder.rules import CanReachLocation, CanReachRegion, Filtered, Has, HasAny, Macro, OptionFilter, Or, Rule
+from rule_builder.rules import CanReachLocation, CanReachRegion, Filtered, Has, HasAny, OptionFilter, Or, Rule, TWorld, WrapperRule
 from worlds.AutoWorld import World
 
 from .data import ItemNames, LocationNames
@@ -39,6 +44,74 @@ you_skip_rule = Filtered(you_rule, options=you_enabled_filter, filtered_resoluti
 
 whip_weapon_rule = HasAny(ItemNames.threaded_blade, ItemNames.shamrock, ItemNames.demon_slayer, ItemNames.claiomh_solais)
 boss_token_rule = Has(ItemNames.boss_token, 8)
+
+macros: dict[str,Rule.Resolved] = {}
+
+@dataclasses.dataclass()
+class Macro(WrapperRule[TWorld], game="YOHANE THE PARHELION -BLAZE in the DEEPBLUE-"):
+    name: str
+    description: str = ""
+
+    @override
+    def _instantiate(self, world: TWorld) -> Rule.Resolved:
+        resolved = self.Resolved(
+            self.child.resolve(world),
+            self.name,
+            self.description,
+            player=world.player,
+            caching_enabled=getattr(world, "rule_caching_enabled", False),
+        )
+        if self.name not in macros:
+            macros[self.name] = resolved
+        return resolved
+
+    @override
+    def to_dict(self) -> dict[str, Any]:
+        data = super().to_dict()
+        data["args"] = {
+            "name": self.name,
+            "description": self.description,
+        }
+        return data
+
+    @override
+    @classmethod
+    def from_dict(cls, data: Mapping[str, Any], world_cls: "type[World]") -> Self:
+        child = data.get("child")
+        if child is None:
+            raise ValueError("Child rule cannot be None")
+        options = OptionFilter.multiple_from_dict(data.get("options", ()))
+        return cls(
+            child=world_cls.rule_from_dict(child),
+            name=data["name"],
+            description=data.get("description", ""),
+            options=options,
+        )
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}[{self.child}]"
+
+    class Resolved(WrapperRule.Resolved):
+        name: str
+        description: str = ""
+
+        @override
+        def explain_json(self, state: CollectionState | None = None) -> list[JSONMessagePart]:
+            if state is None:
+                return [{"type": "text", "text": str(self)}]
+            return [{"type": "color", "color": "green" if self(state) else "salmon", "text": str(self)}]
+
+        @override
+        def explain_str(self, state: CollectionState | None = None) -> str:
+            suffix = ""
+            if state is not None:
+                suffix = " ✓" if self(state) else " ✕"
+            return f"{self.name}{suffix}"
+
+        @override
+        def __str__(self) -> str:
+            return self.name
 
 region_group_rules: dict[str, Macro] = {}
 for region in region_groups:
