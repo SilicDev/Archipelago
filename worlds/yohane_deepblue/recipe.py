@@ -157,7 +157,7 @@ class RecipeList:
 
     def generate(self, random: Random, max_consumable: int, max_enemy: int, max_breakable: int) -> None:
         for _ in range(93):
-            ingredient1 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
+            ingredient1 = self._select_breakable_ingredient(random, max_enemy, max_breakable)
             ingredient2 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
             while ingredient2.item_name == ingredient1.item_name:
                 ingredient2 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
@@ -214,6 +214,16 @@ class RecipeList:
             data = data[8:]
         pass
 
+    def _select_breakable_ingredient(self, random: Random, max_enemy: int, max_breakable: int) -> Ingredient:
+        rand = random.random()
+        if rand < 0.5:
+            item = random.choice(list(enemy_material_table.keys()))
+            count = self._random_amount(random, 1, max_enemy)
+            return Ingredient(item, count)
+        item = random.choice(list(breakable_material_table.keys()))
+        count = self._random_amount(random, 1, max_breakable, 5)
+        return Ingredient(item, count)
+
     def _select_ingredient(self, random: Random, max_consumable: int, max_enemy: int, max_breakable: int) -> Ingredient:
         rand = random.random()
         if rand < 0.05:
@@ -224,13 +234,7 @@ class RecipeList:
             item = random.choice(consumable_ingredients)
             count = self._random_amount(random, 1, max_consumable)
             return Ingredient(item, count)
-        if rand < 0.6:
-            item = random.choice(list(enemy_material_table.keys()))
-            count = self._random_amount(random, 1, max_enemy)
-            return Ingredient(item, count)
-        item = random.choice(list(breakable_material_table.keys()))
-        count = self._random_amount(random, 1, max_breakable, 5)
-        return Ingredient(item, count)
+        return self._select_breakable_ingredient(random, max_enemy, max_breakable)
 
     def _random_amount(self, random: Random, min: int, max: int, p: int = 2) -> int:
         return round(min + (max - min) * pow(random.random(), p))
