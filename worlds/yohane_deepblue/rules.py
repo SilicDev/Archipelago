@@ -1,10 +1,24 @@
 import dataclasses
-from typing import Any, Mapping, Self, override
+from collections.abc import Mapping
+from typing import Any, Self
+
+from typing_extensions import override
 
 from BaseClasses import CollectionState
 from NetUtils import JSONMessagePart
 from Options import Toggle
-from rule_builder.rules import CanReachLocation, CanReachRegion, Filtered, Has, HasAny, OptionFilter, Or, Rule, TWorld, WrapperRule
+from rule_builder.rules import (
+    CanReachLocation,
+    CanReachRegion,
+    Filtered,
+    Has,
+    HasAny,
+    OptionFilter,
+    Or,
+    Rule,
+    TWorld,
+    WrapperRule,
+)
 from worlds.AutoWorld import World
 
 from .data import ItemNames, LocationNames
@@ -206,6 +220,3 @@ def set_chest_rules(world: World) -> None:
     # Infernal Altar
     world.set_rule(world.get_location(LocationNames.purple_goo_room_chest), you_rule & (soarshoes_rule | gloves_rule))
     world.set_rule(world.get_location(LocationNames.dark_room_chest), you_rule & (soarshoes_rule | gloves_rule))
-
-
-

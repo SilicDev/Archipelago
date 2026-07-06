@@ -9,7 +9,7 @@ from random import Random
 
 from Options import Toggle
 from rule_builder.options import OptionFilter
-from rule_builder.rules import And, CanReachRegion, Has, Or, Rule, True_
+from rule_builder.rules import CanReachRegion, Has, Or, Rule, True_
 
 from .data import DataMaps, ItemNames, LocationNames
 from .items import (

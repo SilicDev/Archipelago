@@ -111,6 +111,6 @@ def apply_patches(ctx: YohaneDeepblueContext, game: pymem.Pymem) -> bool:
                 game.write_string(item_name_table + item.location * ITEM_NAME_LEN,
                                                 item_name[:ITEM_NAME_LEN - 1])
         game.write_bytes(game.base_address + ITEMGET_END_PATCH_LOCATION, ITEMGET_END_PATCH, len(ITEMGET_END_PATCH))
-    except (pymem.exception.MemoryWriteError, pymem.exception.ProcessError) as me:
+    except (pymem.exception.MemoryWriteError, pymem.exception.ProcessError) as _:
         return False
     return True

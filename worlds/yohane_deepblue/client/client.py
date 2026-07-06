@@ -1,7 +1,6 @@
 import asyncio
 import ctypes
 import enum
-import struct
 import time
 from argparse import Namespace
 from collections.abc import Sequence
