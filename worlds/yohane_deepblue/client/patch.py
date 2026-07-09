@@ -31,6 +31,11 @@ ITEM_NAME_END_PATCH = (b"\x00\x00\x00\x00\x00\x00\x00\x00\x53\x52\x48\x83\xec\x3
                        b"\xe8\xb3\xff\xff\xff\x48\x8b\x4c\x24\x60\x48\x31\xe1\xe8\x22\xb8"
                        b"\xf6\xff\x48\x8b\x9c\x24\x88\x00\x00\x00\x48\x83\xc4\x70\x5f\xc3")
 
+SAVEFILE_PATCH_1_LOCATION = 0x9b8718
+SAVEFILE_PATCH_1 = b"\x48\x8b\x15\x95\x5c\x35\x00"
+SAVEFILE_PATCH_2_LOCATION = 0x9b9b61
+SAVEFILE_PATCH_2 = b"\x48\x8b\x15\x4c\x48\x35\x00"
+
 ITEMGET_END_PATCH_LOCATION = 0xd0e2dc
 ITEMGET_END_PATCH = (b"\x48\x89\xd9\x53\x57\x48\x81\xec\x88\x00\x00\x00\x48\x8b\x05\x11"
                      b"\x52\x42\x00\x48\x31\xe0\x48\x89\x44\x24\x70\x89\xcb\xe8\x76\xff"
@@ -50,6 +55,21 @@ ITEMGET_END_PATCH = (b"\x48\x89\xd9\x53\x57\x48\x81\xec\x88\x00\x00\x00\x48\x8b\
 item_name_table = -1
 location_item_name_table = -1
 ITEM_NAME_LEN = 0x80
+save_game_name = 0xd0e3b4
+string_table = -1
+
+def apply_prepatch(ctx: YohaneDeepblueContext, game: pymem.Pymem) -> bool:
+    try:
+        main_struct = int(game.read_longlong(game.base_address + addresses.MAIN_BASE_OFFSET))
+        #game.write_bytes(main_struct + 0x1c00, (0).to_bytes(0x7c00*10, "little"), 0x7c00*10)
+        #game.write_bytes(game.base_address + SAVEFILE_PATCH_1_LOCATION, SAVEFILE_PATCH_1, len(SAVEFILE_PATCH_1))
+        #game.write_bytes(game.base_address + SAVEFILE_PATCH_2_LOCATION, SAVEFILE_PATCH_2, len(SAVEFILE_PATCH_2))
+        #string_table = game.allocate(0x1000)
+        #game.write_longlong(game.base_address + save_game_name, string_table)
+        #game.write_string(string_table, f"yhnGame%03d_P{ctx.slot}_{ctx.seed_name}")
+    except (pymem.exception.MemoryWriteError, pymem.exception.ProcessError) as _:
+        return False
+    return True
 
 def apply_patches(ctx: YohaneDeepblueContext, game: pymem.Pymem) -> bool:
     #with open("./worlds/yohane_deepblue/test/recipe_dump.bin", "w") as f:

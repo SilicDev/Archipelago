@@ -31,7 +31,7 @@ from .locations import YohaneDeepblueLocation, location_groups, location_table, 
 from .options import YohaneDeepblueOptions, yohane_deepblue_option_groups
 from .recipe import RecipeList, ingredient_rules
 from .regions import connect_regions, create_regions
-from .rules import region_group_rules, set_rules, macros
+from .rules import macros, region_group_rules, set_rules
 
 
 def run_client(*args: str) -> None:

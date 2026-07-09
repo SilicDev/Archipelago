@@ -841,7 +841,9 @@ class YohaneDeepblueContext(CommonContext):
     def connect_to_game(self) -> None:
         try:
             self.game_process = PymemEX(process_name="game.exe", exact_match=True)
-            if self.game_process is not None:
+            if self.game_process is not None and self.valid_slot:
+                from .patch import apply_prepatch
+                apply_prepatch(self, self.game_process)
                 self.game_patched = False
                 self.game_connected = True
                 logger.info("Successfully connected to %s.", self.game)
