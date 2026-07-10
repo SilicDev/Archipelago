@@ -555,7 +555,7 @@ def setup_locations(world: World, player: int) -> dict[str, int | None]:
     locations.update({**boss_fight_locations})
     locations.update({**boss_refight_locations})
     locations.update({**chest_locations})
-    if world.options.recipesanity == Toggle.option_true:
+    if world.options.craftsanity == Toggle.option_true:
         locations.update({**crafting_locations})
     return locations
 
