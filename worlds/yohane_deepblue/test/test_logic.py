@@ -6,6 +6,9 @@ from .bases import YohaneDeepblueTestBase
 
 class TestAccessibilityDefault(YohaneDeepblueTestBase):
 
+    def test_location_count(self) -> None:
+        self.assertEqual(len(list(self.multiworld.get_locations())), 82 + 1)
+
     def test_beatable(self):
         progression_variant1 = [
             ItemNames.fallen_angels_soarshoes,
@@ -57,6 +60,9 @@ class TestChikaBlocksNotMoved(YohaneDeepblueTestBase):
         "early_chika_blocks_moved": False
     }
 
+    def test_location_count(self) -> None:
+        self.assertEqual(len(list(self.multiworld.get_locations())), 82 + 1)
+
     def test_accessibility_grotto(self) -> None:
         self.assertAccessDependency([LocationNames.grotto_next_to_first_save_room_chest],
                                     [
@@ -107,3 +113,12 @@ class TestChikaBlocksNotMoved(YohaneDeepblueTestBase):
                 self.multiworld.state = CollectionState(self.multiworld)
             except AssertionError as e:
                 raise AssertionError(f"{e}, Item '{i}' not required to beat the game!") from e
+
+
+class TestCraftSanity(TestAccessibilityDefault):
+    options = {
+        "craftsanity": True
+    }
+
+    def test_location_count(self) -> None:
+        self.assertEqual(len(list(self.multiworld.get_locations())), 175 + 1)
