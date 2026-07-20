@@ -16,6 +16,7 @@ from Options import Toggle
 from Utils import gui_enabled
 
 from ..data import DataMaps, ItemNames
+from ..data.constants import GAME_NAME
 from ..items import (
     accessories_table,
     character_upgrade_table,
@@ -143,7 +144,7 @@ class YohaneDeepblueCommandProcessor(ClientCommandProcessor):
 
 
 class YohaneDeepblueContext(CommonContext):
-    game = "YOHANE THE PARHELION -BLAZE in the DEEPBLUE-"
+    game = GAME_NAME
     items_handling = 0b111  # full remote
 
     client_loop: asyncio.Task[None]
@@ -593,9 +594,9 @@ class YohaneDeepblueContext(CommonContext):
                     #self.thread = game.start_thread(game.base_address + addresses.DISPLAY_YEN_MESSAGE_FUNC, amount)
 
             if item_name in weapons_table.keys():
-                weapon = int(game.read_ushort(save_game + addresses.EQUIPPED_ABILITIES_FLAGS_OFFSET + 4))
+                weapon = int(game.read_ushort(save_game + addresses.EQUIPPED_WEAPON_OFFSET))
                 if weapon == 0:
-                    game.write_ushort(save_game + addresses.EQUIPPED_ABILITIES_FLAGS_OFFSET + 4, item.item)
+                    game.write_ushort(save_game + addresses.EQUIPPED_WEAPON_OFFSET, item.item)
 
 
             accessories_changed = 0

@@ -3,10 +3,11 @@ from Options import Toggle
 from worlds.AutoWorld import World
 
 from .data import LocationNames
+from .data.constants import GAME_NAME
 
 
 class YohaneDeepblueLocation(Location):
-    game: str = "YOHANE THE PARHELION -BLAZE in the DEEPBLUE-"
+    game: str = GAME_NAME
 
 character_rescue_locations = {
     LocationNames.chika_rescue: 1,

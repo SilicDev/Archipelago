@@ -3,6 +3,7 @@ import typing
 from BaseClasses import Item
 
 from .data import ItemNames
+from .data.constants import GAME_NAME
 
 
 class ItemData(typing.NamedTuple):
@@ -12,7 +13,7 @@ class ItemData(typing.NamedTuple):
     quantity: int = 1
 
 class YohaneDeepblueItem(Item):
-    game: str = "YOHANE THE PARHELION -BLAZE in the DEEPBLUE-"
+    game: str = GAME_NAME
 
 
 character_upgrade_table: dict[str, ItemData] = {

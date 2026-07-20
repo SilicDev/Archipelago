@@ -7,10 +7,12 @@ from BaseClasses import CollectionState, Item, ItemClassification, MultiWorld, T
 from NetUtils import JSONMessagePart
 from Options import Toggle
 from rule_builder.cached_world import CachedRuleBuilderWorld
+from Utils import tuplize_version
 from worlds.AutoWorld import WebWorld
 from worlds.LauncherComponents import Component, Type, components, launch
 
 from .data import ItemNames, LocationNames
+from .data.constants import GAME_NAME
 from .items import (
     YohaneDeepblueItem,
     accessories_table,
@@ -42,7 +44,7 @@ components.append(
     Component(
         "YOHANE THE PARHELION -BLAZE in the DEEPBLUE- Client",
         func=run_client,
-        game_name="YOHANE THE PARHELION -BLAZE in the DEEPBLUE-",
+        game_name=GAME_NAME,
         component_type=Type.CLIENT,
         supports_uri=True,
         description="Yohane BiD Client",
@@ -69,7 +71,7 @@ class YohaneDeepblueWebWorld(WebWorld):
     option_groups = yohane_deepblue_option_groups
 
 class YohaneDeepblueWorld(CachedRuleBuilderWorld):
-    game = "YOHANE THE PARHELION -BLAZE in the DEEPBLUE-"
+    game = GAME_NAME
     web = YohaneDeepblueWebWorld()
     topology_present = True
 
@@ -236,6 +238,7 @@ class YohaneDeepblueWorld(CachedRuleBuilderWorld):
                 upgrades.append([(location.player, location.address)])
         slot_data["upgrades"] = upgrades
         slot_data["recipes"] = self.recipe_list.get_bytes().hex()
+        slot_data["world_version"] = self.world_version.as_simple_string()
         return slot_data
 
     @staticmethod

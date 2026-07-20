@@ -22,6 +22,7 @@ from rule_builder.rules import (
 from worlds.AutoWorld import World
 
 from .data import ItemNames, LocationNames
+from .data.constants import GAME_NAME
 from .locations import crafting_locations, location_table, region_groups
 from .options import EarlyChikaBlockMoved, EnableYouSkips
 
@@ -62,7 +63,7 @@ boss_token_rule = Has(ItemNames.boss_token, 8)
 macros: dict[str,Rule.Resolved] = {}
 
 @dataclasses.dataclass()
-class Macro(WrapperRule[TWorld], game="YOHANE THE PARHELION -BLAZE in the DEEPBLUE-"):
+class Macro(WrapperRule[TWorld], game=GAME_NAME):
     name: str
     description: str = ""
 
