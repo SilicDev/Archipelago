@@ -165,7 +165,7 @@ def set_rules(world: World) -> None:
     world.set_rule(world.get_location(LocationNames.riko_upgrade_quest), Has(ItemNames.riko_upgrade))
     world.set_rule(world.get_location(LocationNames.hanamaru_upgrade_quest), Has(ItemNames.hanamaru_upgrade))
 
-    if world.options.recipesanity == Toggle.option_true:
+    if world.options.craftsanity == Toggle.option_true:
         for location in crafting_locations:
             location_id = location_table[location]
             world.set_rule(world.get_location(location), world.recipe_list.recipes[location_id - 701].access_rule)
