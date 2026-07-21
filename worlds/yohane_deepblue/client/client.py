@@ -283,9 +283,6 @@ class YohaneDeepblueContext(CommonContext):
                             await self.send_death()
                             self.can_send_deathlink = False
 
-                    threadstack = self.get_threadstack0()
-                    if threadstack is not None:
-                        self.threadstack0 = threadstack
                     await self.detect_damage(self.game_process)
 
                     map_area = int(self.game_process.read_uchar(save_game + addresses.MAP_AREA_OFFSET))
@@ -506,27 +503,19 @@ class YohaneDeepblueContext(CommonContext):
 
 
     async def detect_damage(self, game: pymem.Pymem):
-        if self.threadstack0 >= 0:
-            try:
-                self.yohane_pointer = _resolve_pointer(self, self.threadstack0, addresses.YOHANE_PTR)
-            except Exception: # threadstack doesn't always point to this
-                            #logger.info(e)
-                pass
-        if self.yohane_pointer >= 0:
-            try:
-                health = int(game.read_ulong(self.yohane_pointer + addresses.CURRENT_HP_OFFSET))
-                max_health = int(game.read_ulong(self.yohane_pointer + addresses.MAX_HP_OFFSET))
-                if self.damagelink_enabled:
-                    if (health < self.last_health and max_health == self.last_max_health and
-                                        self.can_send_damagelink):
-                        await self.send_damage(self.last_health - health)
-                        self.can_send_damagelink = False
-                    else:
-                        self.can_send_damagelink = True
-                    self.last_health = health
-                    self.last_max_health = max_health
-            except Exception:
-                pass
+        yohane_pointer = _resolve_pointer(self, self.get_base_address(addresses.FLAGS_STRUCT_BASE_OFFSET),
+                                               addresses.YOHANE_PTR)
+        health = int(game.read_ulong(yohane_pointer + addresses.CURRENT_HP_OFFSET))
+        max_health = int(game.read_ulong(yohane_pointer + addresses.MAX_HP_OFFSET))
+        if self.damagelink_enabled:
+            if (health < self.last_health and max_health == self.last_max_health and
+                                self.can_send_damagelink):
+                await self.send_damage(self.last_health - health)
+                self.can_send_damagelink = False
+            else:
+                self.can_send_damagelink = True
+            self.last_health = health
+            self.last_max_health = max_health
 
 
     def handle_items_received(self, game: pymem.Pymem, save_game: int):
