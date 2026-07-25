@@ -7,8 +7,7 @@ from BaseClasses import CollectionState, Item, ItemClassification, MultiWorld, T
 from NetUtils import JSONMessagePart
 from Options import Toggle
 from rule_builder.cached_world import CachedRuleBuilderWorld
-from Utils import tuplize_version
-from worlds.AutoWorld import WebWorld
+from worlds.AutoWorld import WebWorld, World
 from worlds.LauncherComponents import Component, Type, components, launch
 
 from .data import ItemNames, LocationNames
@@ -70,7 +69,7 @@ class YohaneDeepblueWebWorld(WebWorld):
 
     option_groups = yohane_deepblue_option_groups
 
-class YohaneDeepblueWorld(CachedRuleBuilderWorld):
+class YohaneDeepblueWorld(World):
     game = GAME_NAME
     web = YohaneDeepblueWebWorld()
     topology_present = True

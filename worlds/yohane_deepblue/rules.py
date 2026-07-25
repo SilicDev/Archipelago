@@ -131,7 +131,7 @@ class Macro(WrapperRule[TWorld], game=GAME_NAME):
 region_group_rules: dict[str, Macro] = {}
 for region in region_groups:
     region_group_rules[region] = Macro(Or(*[CanReachRegion(region) for region in region_groups[region]]),
-                                 f"Can Reach Group '{region}'")
+                                f"Can Reach Group '{region}'")
 
 def set_rules(world: World) -> None:
     set_chest_rules(world)

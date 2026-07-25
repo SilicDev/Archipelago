@@ -129,7 +129,7 @@ def apply_patches(ctx: YohaneDeepblueContext, game: pymem.Pymem) -> bool:
                 else:
                     game.write_int(recipe_offset + (item.location - 700)*0x30 + 0x8, item.location)
                 game.write_string(item_name_table + item.location * ITEM_NAME_LEN,
-                                                item_name[:ITEM_NAME_LEN - 1])
+                                                f"{item.location - 700}) " + item_name[:ITEM_NAME_LEN - 5])
         game.write_bytes(game.base_address + ITEMGET_END_PATCH_LOCATION, ITEMGET_END_PATCH, len(ITEMGET_END_PATCH))
     except (pymem.exception.MemoryWriteError, pymem.exception.ProcessError) as _:
         return False
