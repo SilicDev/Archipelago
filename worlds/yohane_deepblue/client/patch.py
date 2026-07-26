@@ -2,6 +2,8 @@ import struct
 
 from pymem import pymem
 
+from BaseClasses import ItemClassification
+
 from ..data import ItemNames
 from ..items import item_table
 from ..locations import location_table
@@ -122,6 +124,10 @@ def apply_patches(ctx: YohaneDeepblueContext, game: pymem.Pymem) -> bool:
             item_name = ctx.item_names.lookup_in_slot(item.item, item.player)
             if item.player != ctx.slot:
                 item_name = f"{ctx.slot_info[item.player].name}'s {item_name}"
+            if item.flags & ItemClassification.progression:
+                item_name = "(!)"+item_name
+            if item.flags & ItemClassification.trap:
+                item_name = "(T)"+item_name
             game.write_string(location_item_name_table + item.location * ITEM_NAME_LEN, item_name[:ITEM_NAME_LEN - 1])
             if item.location in range(701, 800):
                 if item.player == ctx.slot and item.item < 1000:
