@@ -280,7 +280,7 @@ class YohaneDeepblueContext(CommonContext):
                         if not is_dead and not self.can_send_deathlink:
                             self.can_send_deathlink = True
                         elif is_dead and self.can_send_deathlink:
-                            await self.send_death()
+                            await self.send_death("Yohane ran out of HP.")
                             self.can_send_deathlink = False
 
                     await self.detect_damage(self.game_process)
@@ -510,7 +510,7 @@ class YohaneDeepblueContext(CommonContext):
         if self.damagelink_enabled:
             if (health < self.last_health and max_health == self.last_max_health and
                                 self.can_send_damagelink):
-                await self.send_damage(self.last_health - health)
+                await self.send_damage(self.last_health - health, "Yohane got hit!")
                 self.can_send_damagelink = False
             else:
                 self.can_send_damagelink = True
