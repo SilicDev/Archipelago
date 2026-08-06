@@ -571,3 +571,10 @@ def connect(world: World, source: str, destination: str, rule: Rule | Callable[[
 
     source_region.exits.append(entrance)
     entrance.connect(dest_region)
+    if not one_way:
+        entrance_name = destination + " <-> " + source
+        entrance = Entrance(world.player, entrance_name, dest_region, randomization_group, randomization_type)
+        if rule is not None:
+            world.set_rule(entrance, rule)
+        dest_region.exits.append(entrance)
+        entrance.connect(source_region)
