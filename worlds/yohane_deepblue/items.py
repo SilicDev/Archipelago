@@ -381,6 +381,31 @@ accessories_used_in_crafting_set = {
     ItemNames.tattered_cloth
 }
 
+important_progression_set = {
+    ItemNames.ruby_upgrade,
+    ItemNames.fallen_angels_soarshoes,
+    ItemNames.gloves_of_might,
+    ItemNames.sea_deitys_charm,
+    ItemNames.lailaps_unlock,
+    ItemNames.chika_unlock,
+    ItemNames.riko_unlock,
+    ItemNames.kanan_unlock,
+    ItemNames.dia_unlock,
+    ItemNames.you_unlock,
+    ItemNames.mari_unlock,
+    ItemNames.hanamaru_unlock,
+    ItemNames.ruby_unlock,
+    ItemNames.boss_token,
+    ItemNames.progressive_chika_unlock,
+    ItemNames.progressive_riko_unlock,
+    ItemNames.progressive_kanan_unlock,
+    ItemNames.progressive_hanamaru_unlock,
+    ItemNames.progressive_ruby_unlock,
+    ItemNames.progressive_you_unlock,
+    ItemNames.progressive_dia_unlock,
+    ItemNames.progressive_mari_unlock,
+}
+
 valid_crafting_results = {
     **unique_accessories_table,
     **character_upgrade_table,

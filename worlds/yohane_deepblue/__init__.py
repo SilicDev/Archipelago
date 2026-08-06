@@ -22,6 +22,7 @@ from .items import (
     event_table,
     item_groups,
     item_table,
+    important_progression_set,
     junk_table,
     progressive_character_table,
     rare_material_table,
@@ -188,6 +189,8 @@ class YohaneDeepblueWorld(World):
         classification = ItemClassification.filler
         if data.progression:
             classification = ItemClassification.progression
+            if name in important_progression_set:
+                classification |= ItemClassification.useful
         elif data.trap:
             classification = ItemClassification.trap
         elif name in rare_material_table.keys():
