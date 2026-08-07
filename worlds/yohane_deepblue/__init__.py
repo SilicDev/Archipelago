@@ -85,6 +85,8 @@ class YohaneDeepblueWorld(World):
 
     origin_region_name = LocationNames.origin_region
 
+    ut_can_gen_without_yaml = True
+
     def __init__(self, multiworld: MultiWorld, player: int) -> None:
         super().__init__(multiworld, player)
         self.recipe_list = RecipeList()
@@ -114,6 +116,11 @@ class YohaneDeepblueWorld(World):
             slot_data: dict[str, typing.Any] = re_gen_passthrough[self.game]
             recipe_data = bytes.fromhex(slot_data.get("recipes", ""))
             self.recipe_list.from_bytes(bytearray(recipe_data))
+            self.options.early_chika_blocks_moved.value = slot_data["early_chika_blocks_moved"]
+            self.options.enable_you_skips.value = slot_data["enable_you_skips"]
+            self.options.craftsanity.value = slot_data["craftsanity"]
+            self.options.recipesanity.value = slot_data["recipesanity"]
+            self.options.progressive_character_unlocks = slot_data["progressive_character_unlocks"]
 
         else:
             if self.options.recipesanity == Toggle.option_true:
