@@ -74,7 +74,7 @@ class SonicColoursDSWorld(World):
     item_name_groups = item_groups
     location_name_groups = location_groups
 
-    required_client_version = (0, 6, 6)
+    ut_can_gen_without_yaml = True
 
 
     def __init__(self, multiworld: MultiWorld, player: int):
@@ -83,6 +83,12 @@ class SonicColoursDSWorld(World):
 
 
     def generate_early(self) -> None:
+        re_gen_passthrough = getattr(self.multiworld, "re_gen_passthrough", {})
+        if re_gen_passthrough and self.game in re_gen_passthrough:
+            slot_data: dict[str, typing.Any] = re_gen_passthrough[self.game]
+            self.options.goal.value = slot_data["goal"]
+            self.options.redringsanity.value = slot_data["redringsanity"]
+            self.options.starting_planets.value = slot_data["starting_planets"]
         for key in sorted(self.options.starting_planets.value):
             self.starting_planet_access.append(DataMaps.planet_names_to_unlock[key])
         return super().generate_early()
@@ -154,3 +160,7 @@ class SonicColoursDSWorld(World):
             "redringsanity",
             "starting_planets"
         )
+
+    @staticmethod
+    def interpret_slot_data(slot_data: dict[str, typing.Any]) -> dict[str, typing.Any]:
+        return slot_data
