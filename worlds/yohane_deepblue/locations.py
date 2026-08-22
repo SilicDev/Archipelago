@@ -223,6 +223,9 @@ menu_region_locations = {
     LocationNames.you_upgrade_quest,
     LocationNames.dia_upgrade_quest,
     LocationNames.mari_upgrade_quest,
+}
+
+crafting_region_locations = {
     *crafting_locations
 }
 

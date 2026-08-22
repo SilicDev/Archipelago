@@ -609,6 +609,8 @@ class YohaneDeepblueContext(CommonContext):
 
     def handle_remotely_cleared_locations(self, game: pymem.Pymem, save_game: int,
                                                 game_progression_flags: int, boss_defeated_flags: int):
+        if self.in_parlor:
+            return
         for new_remotely_cleared_location in self.checked_locations - self.locations_checked:
                         # other game collected item, clear location
             location_name = location_id_to_name[new_remotely_cleared_location]

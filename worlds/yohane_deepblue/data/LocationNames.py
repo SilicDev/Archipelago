@@ -292,3 +292,5 @@ recipe_90 = "Crafting Recipe 90"
 recipe_91 = "Crafting Recipe 91"
 recipe_92 = "Crafting Recipe 92"
 recipe_93 = "Crafting Recipe 93"
+
+crafting_region = "Cast Menu"

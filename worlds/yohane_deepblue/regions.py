@@ -14,6 +14,7 @@ from .rules import *
 
 def create_regions(world: World, active_locations: dict[str, int]) -> None:
     menu_region = create_region(world, world.origin_region_name, active_locations, menu_region_locations)
+    crafting_region = create_region(world, LocationNames.crafting_region, active_locations, crafting_region_locations)
 
     sunken_temple_entrance_region = create_region(world, LocationNames.sunken_temple_entrance_region, active_locations, sunken_temple_entrance_region_locations)
     sunken_temple_random_region = create_region(world, LocationNames.sunken_temple_random_region, active_locations, sunken_temple_random_region_locations)
@@ -119,6 +120,7 @@ def create_regions(world: World, active_locations: dict[str, int]) -> None:
 
     world.multiworld.regions += [
         menu_region,
+        crafting_region,
 
         sunken_temple_entrance_region,
         sunken_temple_random_region,
@@ -219,6 +221,7 @@ def create_regions(world: World, active_locations: dict[str, int]) -> None:
 
 def connect_regions(world: World) -> None:
     connect(world, world.origin_region_name, LocationNames.sunken_temple_entrance_region, None)
+    connect(world, world.origin_region_name, LocationNames.crafting_region, None)
 
 
     # Sunken Temple
