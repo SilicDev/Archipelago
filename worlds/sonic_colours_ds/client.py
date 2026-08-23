@@ -388,6 +388,12 @@ class SonicColoursDSClient(BizHawkClient):
                 ctx.bizhawk_ctx,
                 [(SCDS_ACTIVE_WISPS, [self.local_active_wisps], "Main RAM")]
             )
+            if self.local_active_wisps & 1 == 0:
+                await bizhawk.guarded_write(
+                    ctx.bizhawk_ctx,
+                    [((counters & 0xFFFFFF) + SCDS_COUNTER_BOOST_OFFSET, (0).to_bytes(2, "little"), "Main RAM")],
+                    [guards["COUNTERS"]]
+                )
             if level_id in DataMaps.boss_level_wisps.keys():
                 if self.local_active_wisps & DataMaps.boss_level_wisps[level_id] == 0:
                     if level_id == 30:
