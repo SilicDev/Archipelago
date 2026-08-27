@@ -55,6 +55,10 @@ class TestAccessibilityDefault(YohaneDeepblueTestBase):
     def test_accessibility_grotto(self) -> None:
         self.assertTrue(self.can_reach_location(LocationNames.grotto_next_to_first_save_room_chest))
 
+    def test_accessibility_sunken_volcano(self) -> None:
+        self.assertAccessDependency([LocationNames.hotspring_room_chest],
+                                    [[ItemNames.kanan_unlock]], True)
+
 class TestChikaBlocksNotMoved(YohaneDeepblueTestBase):
     options = {
         "early_chika_blocks_moved": False
@@ -68,6 +72,13 @@ class TestChikaBlocksNotMoved(YohaneDeepblueTestBase):
                                     [
                                         [ItemNames.chika_unlock],
                                         [ItemNames.ruby_unlock, ItemNames.ruby_upgrade]
+                                    ], True)
+
+    def test_accessibility_sunken_volcano(self) -> None:
+        self.assertAccessDependency([LocationNames.hotspring_room_chest],
+                                    [
+                                        [ItemNames.chika_unlock, ItemNames.kanan_unlock],
+                                        [ItemNames.ruby_unlock, ItemNames.ruby_upgrade, ItemNames.kanan_unlock]
                                     ], True)
 
     def test_beatable(self):
