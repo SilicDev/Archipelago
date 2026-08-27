@@ -531,7 +531,7 @@ def connect_regions(world: World) -> None:
 
     connect(world, LocationNames.sunken_volcano_path_to_tonosama_region, LocationNames.sunken_volcano_tonosama_region, riko_rule)
 
-    connect(world, LocationNames.sunken_volcano_tonosama_region, LocationNames.sunken_volcano_left_region, mari_rule | dia_rule | whip_weapon_rule | upgraded_hanamaru_rule)
+    connect(world, LocationNames.sunken_volcano_tonosama_region, LocationNames.sunken_volcano_left_region, mari_rule | dia_rule | whip_weapon_rule | upgraded_hanamaru_rule, True)
 
     connect(world, LocationNames.sunken_volcano_left_entrance_region, LocationNames.sunken_volcano_soarshoes_region,
             (soarshoes_rule & gloves_rule) | (you_rule & (soarshoes_rule | gloves_rule)), True)
