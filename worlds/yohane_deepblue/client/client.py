@@ -280,7 +280,15 @@ class YohaneDeepblueContext(CommonContext):
                         if not is_dead and not self.can_send_deathlink:
                             self.can_send_deathlink = True
                         elif is_dead and self.can_send_deathlink:
-                            await self.send_death("Yohane ran out of HP.")
+                            yohane_pointer = _resolve_pointer(self, self.get_base_address(addresses.FLAGS_STRUCT_BASE_OFFSET),
+                                                                addresses.YOHANE_PTR)
+                            darkness = int(self.game_process.read_ulong(yohane_pointer + addresses.CURRENT_DP_OFFSET))
+                            message = f"{self.slot_info[self.slot].name}"
+                            if darkness == 0:
+                                message += " was too eager to let Yohane cast beyond her abilities."
+                            else:
+                                message += " let Yohane run out of HP."
+                            await self.send_death(message)
                             self.can_send_deathlink = False
 
                     await self.detect_damage(self.game_process)
@@ -510,7 +518,7 @@ class YohaneDeepblueContext(CommonContext):
         if self.damagelink_enabled:
             if (health < self.last_health and max_health == self.last_max_health and
                                 self.can_send_damagelink):
-                await self.send_damage(self.last_health - health, "Yohane got hit!")
+                await self.send_damage(self.last_health - health, f"{self.slot_info[self.slot].name} let Yohane get hit!")
                 self.can_send_damagelink = False
             else:
                 self.can_send_damagelink = True
