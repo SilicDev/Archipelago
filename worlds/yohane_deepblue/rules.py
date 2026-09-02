@@ -10,6 +10,7 @@ from Options import Toggle
 from rule_builder.rules import (
     CanReachLocation,
     CanReachRegion,
+    False_,
     Filtered,
     Has,
     HasAny,
@@ -24,14 +25,16 @@ from worlds.AutoWorld import World
 from .data import ItemNames, LocationNames
 from .data.constants import GAME_NAME
 from .locations import crafting_locations, location_table, region_groups
-from .options import EarlyChikaBlockMoved, EnableYouSkips
+from .options import EarlyChikaBlockMoved, EnableYouSkips, LogicDifficulty
 
 you_enabled_filter = [OptionFilter(EnableYouSkips, EnableYouSkips.option_true)]
 chika_blocks_filter = [OptionFilter(EarlyChikaBlockMoved, EarlyChikaBlockMoved.option_false)]
+easy_mode_filter = [OptionFilter(LogicDifficulty, LogicDifficulty.option_easy)]
 
 soarshoes_rule = Has(ItemNames.fallen_angels_soarshoes)
 gloves_rule = Has(ItemNames.gloves_of_might)
 sea_charm_rule = Has(ItemNames.sea_deitys_charm)
+accessory_slot_rule = Has(ItemNames.extra_accessory_slot)
 
 lailaps_rule = Has(ItemNames.lailaps_unlock)
 chika_rule = Has(ItemNames.chika_unlock)
@@ -53,9 +56,11 @@ upgraded_hanamaru_rule = Has(ItemNames.hanamaru_upgrade) & hanamaru_rule
 upgraded_ruby_rule = Has(ItemNames.ruby_upgrade) & ruby_rule
 
 chika_block_rule = chika_rule | upgraded_ruby_rule
-ignore_projectile_rule = (ruby_rule | upgraded_you_rule | mari_rule | upgraded_riko_rule |
-                          HasAny(ItemNames.mistilteinn, ItemNames.carnwennan, ItemNames.spread_toss))
+ignore_projectile_rule = Filtered((ruby_rule | upgraded_you_rule | mari_rule | upgraded_riko_rule |
+                                   HasAny(ItemNames.mistilteinn, ItemNames.carnwennan, ItemNames.spread_toss)),
+                                   options=easy_mode_filter, filtered_resolution=True)
 you_skip_rule = Filtered(you_rule, options=you_enabled_filter, filtered_resolution=False)
+damage_boost_rule = Filtered(False_(), options=easy_mode_filter, filtered_resolution=True)
 
 whip_weapon_rule = HasAny(ItemNames.threaded_blade, ItemNames.shamrock, ItemNames.demon_slayer, ItemNames.claiomh_solais)
 boss_token_rule = Has(ItemNames.boss_token, 8)
@@ -137,10 +142,11 @@ def set_rules(world: World) -> None:
     set_chest_rules(world)
     world.set_rule(world.get_location(LocationNames.grotto_boss_defeated), sea_charm_rule)
     world.set_rule(world.get_location(LocationNames.sunken_volcano_boss_defeated),
-                   soarshoes_rule) # remove for hard logic
+                   Filtered(soarshoes_rule & accessory_slot_rule, options=easy_mode_filter, filtered_resolution=True))
     world.set_rule(world.get_location(LocationNames.shipwreck_boss_defeated), ignore_projectile_rule)
     world.set_rule(world.get_location(LocationNames.infernal_altar_boss_defeated),
-                   riko_rule & kanan_rule & hanamaru_rule & gloves_rule & soarshoes_rule)
+                   riko_rule & kanan_rule & hanamaru_rule & gloves_rule & soarshoes_rule &
+                   Filtered(accessory_slot_rule, options=easy_mode_filter, filtered_resolution=True))
     world.set_rule(world.get_location(LocationNames.chika_rescue),
                    CanReachLocation(LocationNames.sunken_temple_boss_defeated))
     world.set_rule(world.get_location(LocationNames.kanan_rescue),
@@ -206,7 +212,7 @@ def set_chest_rules(world: World) -> None:
 
     # Crystalline Grotto
     world.set_rule(world.get_location(LocationNames.isolated_chest_room_chest),
-                   (you_rule | soarshoes_rule)) # for easier access
+                   Filtered((you_rule | soarshoes_rule), options=easy_mode_filter, filtered_resolution=True))
     world.set_rule(world.get_location(LocationNames.looong_slide_room_chest), you_rule & ruby_rule)
     world.set_rule(world.get_location(LocationNames.mari_issue_room_chest), mari_rule)
 
@@ -215,7 +221,7 @@ def set_chest_rules(world: World) -> None:
                    hanamaru_rule | (you_rule & (soarshoes_rule | gloves_rule)))
     world.set_rule(world.get_location(LocationNames.scarlet_delta_suit_room_chest), dia_rule & riko_rule)
     world.set_rule(world.get_location(LocationNames.golden_snail_room_chest),
-                   ignore_projectile_rule)# can remove the ignore projectile rule on harder logic
+                   ignore_projectile_rule)
     world.set_rule(world.get_location(LocationNames.you_testing_grounds_chest), you_rule)
 
     # Infernal Altar

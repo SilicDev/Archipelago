@@ -258,7 +258,8 @@ def connect_regions(world: World) -> None:
     # Ruins
     connect(world, LocationNames.ruins_grotto_entrance_region, LocationNames.ruins_boss_1_region, None, True)
 
-    connect(world, LocationNames.ruins_grotto_entrance_region, LocationNames.ruins_left_of_sandpit_region, soarshoes_rule | you_rule, True)
+    connect(world, LocationNames.ruins_grotto_entrance_region, LocationNames.ruins_left_of_sandpit_region,
+            Filtered(soarshoes_rule | you_rule, options=easy_mode_filter, filtered_resolution=True), True)
     connect(world, LocationNames.ruins_left_of_sandpit_region, LocationNames.ruins_grotto_entrance_region, you_rule, True)
 
     connect(world, LocationNames.ruins_boss_1_region, LocationNames.ruins_boss_2_region, None, True)
@@ -318,7 +319,7 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.shipwreck_right_mast_region, LocationNames.shipwreck_boss_region, ignore_projectile_rule, True)
     connect(world, LocationNames.shipwreck_boss_region, LocationNames.shipwreck_right_mast_region, gloves_rule, True)
 
-    connect(world, LocationNames.shipwreck_boss_region, LocationNames.shipwreck_right_entrance_region, (hanamaru_rule | you_rule), True)
+    connect(world, LocationNames.shipwreck_boss_region, LocationNames.shipwreck_right_entrance_region, (hanamaru_rule | you_rule | damage_boost_rule), True)
 
     connect(world, LocationNames.shipwreck_right_entrance_region, LocationNames.sea_of_trees_main_region, None)
 

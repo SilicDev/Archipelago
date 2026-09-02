@@ -121,6 +121,8 @@ class YohaneDeepblueWorld(World):
             self.options.craftsanity.value = slot_data["craftsanity"]
             self.options.recipesanity.value = slot_data["recipesanity"]
             self.options.progressive_character_unlocks = slot_data["progressive_character_unlocks"]
+            # don't reject slot_data from before 0.2.4 -> make breaking change in 0.3.0
+            self.options.logic_difficulty.value = slot_data.get("logic_difficulty", self.options.logic_difficulty.default)
 
         else:
             if self.options.recipesanity == Toggle.option_true:
@@ -231,7 +233,8 @@ class YohaneDeepblueWorld(World):
             "progressive_character_unlocks",
             "upgrade_hints",
             "recipesanity",
-            "craftsanity"
+            "craftsanity",
+            "logic_difficulty",
         )
         upgrades = []
         if self.options.progressive_character_unlocks == Toggle.option_true:
