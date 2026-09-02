@@ -74,15 +74,15 @@ def apply_prepatch(ctx: YohaneDeepblueContext, game: pymem.Pymem) -> bool:
     return True
 
 def apply_patches(ctx: YohaneDeepblueContext, game: pymem.Pymem) -> bool:
-    #with open("./worlds/yohane_deepblue/test/recipe_dump.bin", "w") as f:
-        #recipe_offset = self.game_process.base_address + LAST_RECIPE
+    #with open("./worlds/yohane_deepblue/data/recipe_dump.txt", "w") as f:
+        #recipe_offset = game.base_address + addresses.LAST_RECIPE
         #for i in range(93):
-            #result = self.game_process.read_ushort(recipe_offset + (i+1)*0x30 + 0x8)
-            #f.write(f"{result}\n")
+            #result = game.read_ushort(recipe_offset + (i+1)*0x30 + 0x8)
+            #f.write(f"{result}")
             #for j in range(4):
-                #id = self.game_process.read_ushort(recipe_offset + (i+1)*0x30 + 0x10 + j*8)
-                #count = self.game_process.read_ushort(recipe_offset + (i+1)*0x30 + 0x14 + j*8)
-                #f.write(f"{id}\t{count}\n")
+                #id = game.read_ushort(recipe_offset + (i+1)*0x30 + 0x10 + j*8)
+                #count = game.read_ushort(recipe_offset + (i+1)*0x30 + 0x14 + j*8)
+                #f.write(f";{id}:{count}")
             #f.write("\n")
     try:
         max_id = sorted([item.code for item in item_table.values() if item.code is not None], reverse=True)[0]

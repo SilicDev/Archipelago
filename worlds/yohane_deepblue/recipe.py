@@ -126,14 +126,14 @@ def setup_vanilla_recipes() -> None:
     if recipe_data is None:
         raise FileNotFoundError("Couldn't find 'data/recipe_dump.txt'")
     text = recipe_data.decode("utf-8")
-    recipes = text.split(os.linesep + os.linesep)
+    recipes = text.splitlines()
     for r in recipes:
-        parts = r.split(os.linesep)
+        parts = r.split(";")
         if len(parts) == 5:
             key = lookup_id_to_name[int(parts[0])]
             ingredients: list[Ingredient] = []
             for i in range(1, len(parts)):
-                ingredient_parts = parts[i].split("\t")
+                ingredient_parts = parts[i].split(":")
                 id = int(ingredient_parts[0])
                 if id != 0:
                     ingredients.append(Ingredient(lookup_id_to_name[id], int(ingredient_parts[1])))
