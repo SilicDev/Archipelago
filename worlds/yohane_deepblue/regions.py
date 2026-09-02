@@ -246,7 +246,9 @@ def connect_regions(world: World) -> None:
 
     connect(world, LocationNames.grotto_main_region, LocationNames.ruins_grotto_entrance_region, None)
 
-    connect(world, LocationNames.grotto_top_corridor_region, LocationNames.grotto_top_region, dia_rule | soarshoes_rule)
+    connect(world, LocationNames.grotto_top_corridor_region, LocationNames.grotto_top_region,
+            # probably not 100% accurate, but close enough for us
+            dia_rule | soarshoes_rule | (gloves_rule & you_rule))
 
     connect(world, LocationNames.grotto_top_region, LocationNames.grotto_coral_hill_entrance_region, you_rule | gloves_rule)
 
