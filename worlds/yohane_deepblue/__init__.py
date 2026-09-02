@@ -1,6 +1,7 @@
 """
 Archipelago World definition for YOHANE THE PARHELION -BLAZE in the DEEPBLUE-
 """
+import logging
 import typing
 
 from BaseClasses import CollectionState, Item, ItemClassification, MultiWorld, Tutorial
@@ -20,9 +21,9 @@ from .items import (
     character_upgrade_table,
     crafting_accessories_set,
     event_table,
+    important_progression_set,
     item_groups,
     item_table,
-    important_progression_set,
     junk_table,
     progressive_character_table,
     rare_material_table,
@@ -84,12 +85,14 @@ class YohaneDeepblueWorld(World):
     location_name_groups = location_groups
 
     origin_region_name = LocationNames.origin_region
+    logger: logging.Logger
 
     ut_can_gen_without_yaml = True
 
     def __init__(self, multiworld: MultiWorld, player: int) -> None:
         super().__init__(multiworld, player)
         self.recipe_list = RecipeList()
+        self.logger = logging.getLogger(GAME_NAME)
 
     def explain_rule(self, target_name: str, state: CollectionState) -> list[JSONMessagePart]:
         from Utils import get_intended_text
@@ -134,6 +137,10 @@ class YohaneDeepblueWorld(World):
                 pass
             else:
                 self.recipe_list.generate_default()
+        if self.options.logic_difficulty.value == self.options.logic_difficulty.option_hard:
+            if self.options.enable_you_skips.value == self.options.enable_you_skips.option_false:
+                self.logger.info("logic_difficulty is 'hard' but enable_you_skips was 'False'. Setting enable_you_skips to 'True'")
+                self.options.enable_you_skips.value = self.options.enable_you_skips.option_true
         return super().generate_early()
 
     def create_regions(self) -> None:

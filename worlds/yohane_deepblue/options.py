@@ -39,6 +39,8 @@ class EarlyChikaBlockMoved(DefaultOnToggle):
 class EnableYouSkips(DefaultOnToggle):
     """
     If `true` considers using You to fit through 1 tile gaps while in the air in-logic
+
+    Note: logic_difficulty overrides this setting on hard to always be true.
     """
     display_name = "Enable You Skips"
 
