@@ -235,12 +235,11 @@ class YohaneDeepblueWorld(World):
         )
         upgrades = []
         if self.options.progressive_character_unlocks == Toggle.option_true:
-            for item in progressive_character_table.keys():
-                upgrades.extend([
-                    [
-                        (location.player, location.address)
-                        for location in self.multiworld.find_item_locations(item, self.player)
-                    ] for item in progressive_character_table.keys()])
+            upgrades.extend([
+                [
+                    (location.player, location.address)
+                    for location in self.multiworld.find_item_locations(item, self.player)
+                ] for item in progressive_character_table.keys()])
         else:
             for item in character_upgrade_table.keys():
                 location = self.multiworld.find_item(item, self.player)
