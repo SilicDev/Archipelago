@@ -235,6 +235,7 @@ class YohaneDeepblueWorld(World):
             "death_link_group",
             "damage_link",
             "damage_link_group",
+            "drop_rate_increase",
             "early_chika_blocks_moved",
             "enable_you_skips",
             "progressive_character_unlocks",

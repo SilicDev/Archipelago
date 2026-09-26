@@ -125,6 +125,17 @@ class MaxBreakableIngredientCount(Range):
     display_name = "Max Breakable Material Ingredient Count"
 
 
+class DropRateIncrease(Range):
+    """
+    Increases the drop rates for enemy drops (including money).
+    Not supported in the python client.
+    """
+    range_start = 0
+    range_end = 100
+    default = 0
+    display_name = "Drop Rate Increase"
+
+
 class DeathLinkGroup(FreeText):
     """Death Link only applies to players with an identical Group name.
     Games that don't support the Group option count as having an empty group name."""
@@ -182,6 +193,7 @@ class YohaneDeepblueOptions(PerGameCommonOptions, DeathLinkGroupMixin, DamageLin
     progressive_character_unlocks: ProgressiveCharacterUnlocks
     upgrade_hints: UpgradeHints
     random_starting_weapon: RandomStartingWeapon
+    drop_rate_increase: DropRateIncrease
     craftsanity: Craftsanity
 
     recipesanity: Recipesanity
