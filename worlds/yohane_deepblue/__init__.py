@@ -31,7 +31,7 @@ from .items import (
     weapons_table,
 )
 from .locations import YohaneDeepblueLocation, location_groups, location_table, setup_locations
-from .options import YohaneDeepblueOptions, yohane_deepblue_option_groups
+from .options import RecipeRandomizationType, YohaneDeepblueOptions, yohane_deepblue_option_groups
 from .recipe import RecipeList, ingredient_rules
 from .regions import connect_regions, create_regions
 from .rules import macros, region_group_rules, set_rules
@@ -122,21 +122,42 @@ class YohaneDeepblueWorld(World):
             self.options.early_chika_blocks_moved.value = slot_data["early_chika_blocks_moved"]
             self.options.enable_you_skips.value = slot_data["enable_you_skips"]
             self.options.craftsanity.value = slot_data["craftsanity"]
-            self.options.recipesanity.value = slot_data["recipesanity"]
+            #if "recipesanity" in slot_data.keys():
+                #self.options.recipesanity.value = slot_data["recipesanity"]
+                #if self.options.recipesanity.value == Toggle.option_true:
+                    #self.options.recipe_randomization_type.value = RecipeRandomizationType.option_full
+                #else:
+                    #self.options.recipe_randomization_type.value = RecipeRandomizationType.option_none
+            #else:
+                #self.options.recipe_randomization_type.value = slot_data["recipe_randomization_type"]
             self.options.progressive_character_unlocks = slot_data["progressive_character_unlocks"]
             # don't reject slot_data from before 0.2.4 -> make breaking change in 0.3.0
             self.options.logic_difficulty.value = slot_data.get("logic_difficulty", self.options.logic_difficulty.default)
 
         else:
-            if self.options.recipesanity == Toggle.option_true:
-                # recipes
-                self.recipe_list.generate(self.random,
-                                        self.options.max_consumable_ingredient_count.value,
-                                        self.options.max_enemy_ingredient_count.value,
-                                        self.options.max_breakable_ingredient_count.value)
-                pass
-            else:
-                self.recipe_list.generate_default()
+            # recipes
+            match self.options.recipe_randomization_type.value:
+                case RecipeRandomizationType.option_full:
+                    self.recipe_list.generate_full(self.random,
+                                            self.options.max_consumable_ingredient_count.value,
+                                            self.options.max_enemy_ingredient_count.value,
+                                            self.options.max_breakable_ingredient_count.value)
+                case RecipeRandomizationType.option_areas:
+                    self.recipe_list.generate_by_areas(self.random,
+                                            self.options.max_consumable_ingredient_count.value,
+                                            self.options.max_enemy_ingredient_count.value,
+                                            self.options.max_breakable_ingredient_count.value,
+                                            False)
+                    pass
+                case RecipeRandomizationType.option_areas_locked:
+                    self.recipe_list.generate_by_areas(self.random,
+                                            self.options.max_consumable_ingredient_count.value,
+                                            self.options.max_enemy_ingredient_count.value,
+                                            self.options.max_breakable_ingredient_count.value,
+                                            True)
+                    pass
+                case RecipeRandomizationType.option_none:
+                    self.recipe_list.generate_default()
         if self.options.logic_difficulty.value == self.options.logic_difficulty.option_hard:
             if self.options.enable_you_skips.value == self.options.enable_you_skips.option_false:
                 self.logger.info("logic_difficulty is 'hard' but enable_you_skips was 'False'. Setting enable_you_skips to 'True'")
@@ -169,7 +190,7 @@ class YohaneDeepblueWorld(World):
         itempool.extend([self.create_item(item) for item in unique_accessories_table
                          for _ in range(unique_accessories_table[item].quantity)])
 
-        if self.options.recipesanity == Toggle.option_true:
+        if self.options.recipe_randomization_type != RecipeRandomizationType.option_none:
             itempool.extend([self.create_item(item) for item in self.recipe_list.rare_materials
                              for _ in range(self.recipe_list.rare_materials[item])])
         else:
@@ -180,7 +201,7 @@ class YohaneDeepblueWorld(World):
             itempool.extend([self.create_item(item) for item in weapons_table])
             accessories = sorted(set(accessories_table.keys()).difference(crafting_accessories_set))
             itempool.extend([self.create_item(item) for item in accessories])
-            if self.options.recipesanity == Toggle.option_false:
+            if self.options.recipe_randomization_type == RecipeRandomizationType.option_none:
                 itempool.extend([self.create_item(item) for item in self.recipe_list.accessories
                                 for _ in range(self.recipe_list.accessories[item])])
 
@@ -215,7 +236,8 @@ class YohaneDeepblueWorld(World):
             else:
                 classification = ItemClassification.useful
         elif name in accessories_used_in_crafting_set:
-            if self.options.craftsanity == Toggle.option_true and self.options.recipesanity == Toggle.option_false:
+            if (self.options.craftsanity == Toggle.option_true and
+                self.options.recipe_randomization_type == RecipeRandomizationType.option_none):
                 classification = ItemClassification.progression
             else:
                 classification = ItemClassification.useful
@@ -240,7 +262,7 @@ class YohaneDeepblueWorld(World):
             "enable_you_skips",
             "progressive_character_unlocks",
             "upgrade_hints",
-            "recipesanity",
+            "recipe_randomization_type",
             "craftsanity",
             "logic_difficulty",
         )

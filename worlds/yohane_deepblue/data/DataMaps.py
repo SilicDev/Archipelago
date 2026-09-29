@@ -1,3 +1,4 @@
+import enum
 import typing
 
 from . import ItemNames, LocationNames
@@ -228,6 +229,97 @@ class MaterialLocation(typing.NamedTuple):
     region: str
     is_group: bool = False
     weakness: str = ""
+
+class CraftingItemGroups(enum.IntEnum):
+    EARLY = 0
+    SUNKEN_TEMPLE = 1
+    RUINS = 2
+    SUNKEN_VOLCANO = 3
+    SHIPWRECK = 4
+    CORAL_HILL = 5
+    CRYSTALLINE_GROTTO = 6
+    SEA_OF_TREES = 7
+    INFERNAL_ALTAR = 8
+    RARE = 9
+
+crafting_item_groups = {
+    CraftingItemGroups.EARLY.value: {
+        ItemNames.deepsea_cotton, ItemNames.strange_metal, ItemNames.antique_bronze_coin, ItemNames.springy_shrub,
+        ItemNames.sea_tamahagane, ItemNames.squishy_hide, ItemNames.archs_timber,
+    },
+    CraftingItemGroups.SUNKEN_TEMPLE.value: {
+        ItemNames.deepsea_cotton, ItemNames.strange_metal, ItemNames.antique_bronze_coin, ItemNames.springy_shrub,
+        ItemNames.sea_tamahagane, ItemNames.violet_shell, ItemNames.sharp_tooth, ItemNames.squishy_hide,
+        ItemNames.mysterious_component, ItemNames.archs_timber,
+    },
+    CraftingItemGroups.RUINS.value: {
+        ItemNames.deepsea_cotton, ItemNames.strange_metal, ItemNames.antique_bronze_coin, ItemNames.ancient_silver_coin,
+        ItemNames.soul_crystal, ItemNames.coral_ruby, ItemNames.springy_shrub, ItemNames.sea_tamahagane,
+        ItemNames.dissolvent, ItemNames.violet_shell, ItemNames.squishy_hide, ItemNames.sharp_tooth,
+        ItemNames.archs_timber, ItemNames.broken_lance, ItemNames.aiming_lens, ItemNames.huge_pinchers,
+        ItemNames.fragmented_shell, ItemNames.splendid_shield, ItemNames.slick_armor, ItemNames.elongated_horn,
+        ItemNames.slender_tentacle,
+    },
+    CraftingItemGroups.SUNKEN_VOLCANO.value: {
+        ItemNames.strange_metal, ItemNames.ancient_silver_coin, ItemNames.lustrous_gold_coin, ItemNames.platinum_idol,
+        ItemNames.soul_crystal, ItemNames.coral_ruby, ItemNames.deepsea_diamond, ItemNames.sea_tamahagane,
+        ItemNames.tidelight, ItemNames.magicolight, ItemNames.dissolvent, ItemNames.sunstone, ItemNames.charge_stone,
+        ItemNames.violet_shell, ItemNames.viridian_claw, ItemNames.freaky_tentacle, ItemNames.prismatic_organ,
+        ItemNames.paralytic_slime, ItemNames.golden_eye, ItemNames.broken_lance, ItemNames.fishing_harpoon,
+        ItemNames.greataxe_fragment, ItemNames.huge_pinchers, ItemNames.fragmented_shell, ItemNames.explosive_material,
+        ItemNames.slick_armor, ItemNames.orange_crab_meat, ItemNames.sardine_oil, ItemNames.toasty_tentacle,
+        ItemNames.majestic_drop, ItemNames.deepsea_magicite, ItemNames.ignis_crystal, ItemNames.flamme_essence,
+    },
+    CraftingItemGroups.SHIPWRECK.value: {
+        ItemNames.deepsea_cotton, ItemNames.seaworms_cocoon, ItemNames.lustrous_gold_coin, ItemNames.platinum_idol,
+        ItemNames.coral_ruby, ItemNames.deepsea_diamond, ItemNames.sea_tamahagane, ItemNames.tidelight,
+        ItemNames.magicolight, ItemNames.dissolvent, ItemNames.charge_stone, ItemNames.violet_shell,
+        ItemNames.viridian_claw, ItemNames.sharp_tooth, ItemNames.prismatic_organ, ItemNames.paralytic_slime,
+        ItemNames.scaled_quiver, ItemNames.broken_lance, ItemNames.fishing_harpoon, ItemNames.greataxe_fragment,
+        ItemNames.spikey_orb, ItemNames.high_spec_lens, ItemNames.frozen_meat, ItemNames.chilled_enzyme,
+        ItemNames.sharp_splinter, ItemNames.elongated_horn, ItemNames.sardine_oil, ItemNames.teal_fish_skin,
+        ItemNames.orange_scale, ItemNames.ninja_shuriken, ItemNames.dirt_ball, ItemNames.ice_ball,
+        ItemNames.stiff_tentacle, ItemNames.frozen_drop, ItemNames.deepsea_magicite, ItemNames.turtle_shell,
+        ItemNames.floatation_sack,
+    },
+    CraftingItemGroups.CORAL_HILL.value: {
+        ItemNames.deepsea_cotton, ItemNames.seaworms_cocoon, ItemNames.lustrous_gold_coin, ItemNames.coral_ruby,
+        ItemNames.tidelight, ItemNames.magicolight, ItemNames.sunstone, ItemNames.charge_stone,
+        ItemNames.prismatic_organ, ItemNames.paralytic_slime, ItemNames.golden_eye, ItemNames.scaled_quiver,
+        ItemNames.fishing_harpoon, ItemNames.aiming_lens, ItemNames.high_spec_lens, ItemNames.chilled_enzyme,
+        ItemNames.tender_meat, ItemNames.orange_crab_meat, ItemNames.sardine_core, ItemNames.orange_scale,
+        ItemNames.rainbow_horn, ItemNames.dirt_ball, ItemNames.poison_ball, ItemNames.teleportation_paradigm,
+        ItemNames.draconic_crest,
+    },
+    CraftingItemGroups.CRYSTALLINE_GROTTO.value: {
+        ItemNames.sea_silk, ItemNames.platinum_idol, ItemNames.deepsea_diamond, ItemNames.tidelight,
+        ItemNames.magicolight, ItemNames.emperors_crown, ItemNames.freaky_tentacle, ItemNames.golden_eye,
+        ItemNames.fishing_harpoon, ItemNames.greataxe_fragment, ItemNames.spikey_orb, ItemNames.pirates_symbol,
+        ItemNames.aiming_lens, ItemNames.sturdy_tuft, ItemNames.poison_pouch, ItemNames.chilled_enzyme,
+        ItemNames.tender_meat, ItemNames.sturdy_string, ItemNames.orange_crab_meat, ItemNames.rugged_shrimp_leg,
+        ItemNames.sardine_oil, ItemNames.teal_fish_skin, ItemNames.tingly_tentacle, ItemNames.abyssal_jewel,
+        ItemNames.demonic_sculpture, ItemNames.turtle_shell, ItemNames.draconic_crest, ItemNames.fulgur_essence,
+    },
+    CraftingItemGroups.SEA_OF_TREES.value: {
+        ItemNames.sea_silk, ItemNames.platinum_idol, ItemNames.deepsea_diamond, ItemNames.tidelight,
+        ItemNames.magicolight, ItemNames.freaky_tentacle, ItemNames.emperors_crown, ItemNames.prismatic_organ,
+        ItemNames.paralytic_slime, ItemNames.scaled_quiver, ItemNames.spikey_orb, ItemNames.aiming_lens,
+        ItemNames.high_spec_lens, ItemNames.sturdy_tuft, ItemNames.fragmented_shell, ItemNames.chilled_enzyme,
+        ItemNames.tender_meat, ItemNames.explosive_material, ItemNames.sturdy_string, ItemNames.sharp_splinter,
+        ItemNames.elongated_horn, ItemNames.poison_ball, ItemNames.poison_drop, ItemNames.fulgur_essence,
+    },
+    CraftingItemGroups.INFERNAL_ALTAR.value: {
+        ItemNames.platinum_idol, ItemNames.orichalcum, ItemNames.deepsea_diamond, ItemNames.sirens_tear,
+        ItemNames.magic_mirror, ItemNames.multicolered_seaweed, ItemNames.umbra_rag, ItemNames.emperors_crown,
+        ItemNames.freaky_tentacle, ItemNames.shiny_tail, ItemNames.spikey_orb, ItemNames.pirates_symbol,
+        ItemNames.high_spec_lens, ItemNames.fragmented_shell, ItemNames.slick_armor, ItemNames.teal_fish_skin,
+        ItemNames.orange_scale, ItemNames.venom_ball, ItemNames.abyssal_jewel
+    },
+    CraftingItemGroups.RARE.value: {
+        ItemNames.sharp_arrowhead, ItemNames.broken_knife, ItemNames.natural_sea_radish, ItemNames.phony_eggshell,
+        ItemNames.crimson_eye, ItemNames.magic_medal,
+    },
+}
 
 crafting_item_regions = {
     ItemNames.deepsea_cotton: [MaterialLocation("Sunken Temple", True),
@@ -477,7 +569,7 @@ crafting_item_regions = {
                              #MaterialLocation("Crystalline Grotto", True)
                              ],
     #ItemNames.feeble_leg: ,
-    ItemNames.dirt_ball: [MaterialLocation("Grotto", True)],
+    ItemNames.dirt_ball: [MaterialLocation(LocationNames.grotto_boss_region)],
     ItemNames.poison_ball: [MaterialLocation("Coral Hill", True),
                             MaterialLocation("Sea of Trees", True)],
     ItemNames.ice_ball: [MaterialLocation("Shipwreck", True)],
@@ -495,7 +587,8 @@ crafting_item_regions = {
     #ItemNames.moist_algae: ,
     ItemNames.deepsea_magicite: [MaterialLocation("Sunken Volcano", True),
                                  MaterialLocation("Shipwreck", True)],
-    ItemNames.abyssal_jewel: [MaterialLocation("Crystalline Grotto", True)],
+    ItemNames.abyssal_jewel: [MaterialLocation("Crystalline Grotto", True),
+                              MaterialLocation(LocationNames.infernal_altar_region)],
     ItemNames.demonic_sculpture: [MaterialLocation("Crystalline Grotto", True)],
     ItemNames.magic_medal: [MaterialLocation(LocationNames.shipwreck_main_region),
                             MaterialLocation(LocationNames.shipwreck_right_mast_region),
@@ -517,7 +610,7 @@ crafting_item_regions = {
     ItemNames.fulgur_essence: [MaterialLocation("Crystalline Grotto", True),
                                MaterialLocation("Sea of Trees", True)],
     #ItemNames.jellybooster: ,
-    ItemNames.rusty_rod: [MaterialLocation(LocationNames.infernal_altar_region)],
+    #ItemNames.rusty_rod: [MaterialLocation(LocationNames.infernal_altar_region)],
 }
 
 itemnames_to_fix = {

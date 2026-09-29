@@ -1,6 +1,7 @@
 """
 Option definitions for YOHANE THE PARHELION -BLAZE in the DEEPBLUE-
 """
+import typing
 from dataclasses import dataclass
 
 from Options import (
@@ -8,13 +9,34 @@ from Options import (
     DeathLinkMixin,
     DefaultOnToggle,
     FreeText,
+    Option,
+    OptionError,
     OptionGroup,
     OptionSet,
     PerGameCommonOptions,
     Range,
     StartInventoryPool,
     Toggle,
+    Visibility,
 )
+from worlds.AutoWorld import World
+
+
+class Removed(Option[typing.Any]):
+    """
+    This Option has been Removed.
+    Throws an option error if set to anything but None
+    """
+    default = None
+    replacement: str = ""
+    visibility = Visibility.none
+
+    def __init__(self, value: typing.Any):
+        if value:
+            if self.replacement:
+                raise OptionError(f"Option '{self.__class__.__name__}' is deprecated, use '{self.replacement}' instead.")
+            raise OptionError(f"Option '{self.__class__.__name__}' was removed, please update your options file.")
+
 
 
 class LogicDifficulty(Choice):
@@ -83,19 +105,40 @@ class Craftsanity(Toggle):
     display_name = "Craftsanity"
 
 
-class Recipesanity(Toggle):
+class RecipeRandomizationType(Choice):
+    """
+    Sets how recipes will be randomized.
+
+    WARNING: the logic for this setting is not final yet and may result in unbeatable seeds.
+
+    none: use vanilla recipes
+    areas: use item groups roughly based on vanilla progress for recipes
+    areas_locked: Same as areas, except only items in the given group can be used instead of
+        all previous groups
+    full: fully random recipes
+    """
+    display_name = "Recipe Randomization Type"
+    option_none = 0
+    option_areas = 1
+    option_areas_locked = 2
+    option_full = 3
+    default = option_none
+
+
+class Recipesanity(Removed):
     """
     If `true` randomizes crafting recipes.
 
     WARNING: the logic for this setting is not final yet and may result in unbeatable seed.
     """
     display_name = "Recipesanity"
+    replacement = RecipeRandomizationType.__name__
 
 
 class MaxConsumableIngredientCount(Range):
     """
-    If `recipesanity` is enabled, controlls how many of a given consumable can be required for
-    a single ingredient.
+    If `recipe_randomization_type` is not none, controls how many of a given consumable can
+    be required for a single ingredient.
     """
     range_start = 1
     range_end = 20
@@ -105,8 +148,8 @@ class MaxConsumableIngredientCount(Range):
 
 class MaxEnemyIngredientCount(Range):
     """
-    If `recipesanity` is enabled, controlls how many of a given enemy material can be required for
-    a single ingredient.
+    If `recipe_randomization_type` is not none, controls how many of a given enemy material
+    can be required for a single ingredient.
     """
     range_start = 1
     range_end = 20
@@ -116,8 +159,8 @@ class MaxEnemyIngredientCount(Range):
 
 class MaxBreakableIngredientCount(Range):
     """
-    If `recipesanity` is enabled, controlls how many of a given breakable material can be required for
-    a single ingredient.
+    If `recipe_randomization_type` is not none, controls how many of a given breakable
+    material can be required for a single ingredient.
     """
     range_start = 1
     range_end = 20
@@ -164,6 +207,7 @@ yohane_deepblue_option_groups = [
     ]),
     OptionGroup("Recipesanity", [
         Recipesanity,
+        RecipeRandomizationType,
         MaxConsumableIngredientCount,
         MaxEnemyIngredientCount,
         MaxBreakableIngredientCount,
@@ -196,7 +240,8 @@ class YohaneDeepblueOptions(PerGameCommonOptions, DeathLinkGroupMixin, DamageLin
     drop_rate_increase: DropRateIncrease
     craftsanity: Craftsanity
 
-    recipesanity: Recipesanity
+    #recipesanity: Recipesanity
+    recipe_randomization_type: RecipeRandomizationType
     max_consumable_ingredient_count: MaxConsumableIngredientCount
     max_enemy_ingredient_count: MaxEnemyIngredientCount
     max_breakable_ingredient_count: MaxBreakableIngredientCount

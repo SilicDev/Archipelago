@@ -22,7 +22,7 @@ from .items import (
     rare_material_table,
     stackables_set,
 )
-from .options import Recipesanity
+from .options import RecipeRandomizationType
 from .rules import Macro, region_group_rules, upgraded_mari_rule
 
 recipe_ingredients = sorted(stackables_set)
@@ -155,27 +155,29 @@ class RecipeList:
         self.rare_materials: dict[str, int] = {}
         self.accessories: dict[str, int] = {} # vanilla only
 
-    def generate(self, random: Random, max_consumable: int, max_enemy: int, max_breakable: int) -> None:
+    def generate_full(self, random: Random, max_consumable: int, max_enemy: int, max_breakable: int) -> None:
+        enemy_pool = sorted(enemy_material_table.keys())
+        breakable_pool = sorted(breakable_material_table.keys())
         for _ in range(93):
-            ingredient1 = self._select_breakable_ingredient(random, max_enemy, max_breakable)
-            ingredient2 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
-            while ingredient2.item_name == ingredient1.item_name:
-                ingredient2 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
-            ingredient3 = Ingredient("", 0)
-            ingredient4 = Ingredient("", 0)
-            rand = random.random()
-            if rand < 0.5:
-                ingredient3 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
-                while ingredient3.item_name in [ingredient1.item_name, ingredient2.item_name]:
-                    ingredient3 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
-            if rand < 0.25:
-                ingredient4 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
-                while ingredient4.item_name in [ingredient1.item_name, ingredient2.item_name, ingredient3.item_name]:
-                    ingredient4 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable)
-            ingredients = sorted([ingredient1, ingredient2, ingredient3, ingredient4], key=_sort_ingredients)
-            self._count_materials(*ingredients)
-            access_rule = self._get_ingredients_rule(*ingredients)
-            self.recipes.append(Recipe(*ingredients, access_rule=access_rule))
+            self.recipes.append(self._create_recipe(random, max_consumable, max_enemy, max_breakable,
+                                                    enemy_pool, breakable_pool))
+        pass
+
+    def generate_by_areas(self, random: Random,
+                          max_consumable: int, max_enemy: int, max_breakable: int,
+                          locked: bool) -> None:
+        previous_pool: set[str] = set()
+        for i in range(10):
+            new_pool = DataMaps.crafting_item_groups[i]
+            pool = new_pool | previous_pool
+            enemy_pool = sorted(enemy_material_table.keys() & pool)
+            breakable_pool = sorted(breakable_material_table.keys() & pool)
+            for j in range(10):
+                if i * 10 + j < 93:
+                    self.recipes.append(self._create_recipe(random, max_consumable, max_enemy, max_breakable,
+                                                            enemy_pool, breakable_pool))
+            if not locked:
+                previous_pool |= new_pool
         pass
 
     def generate_default(self) -> None:
@@ -214,17 +216,49 @@ class RecipeList:
             data = data[8:]
         pass
 
-    def _select_breakable_ingredient(self, random: Random, max_enemy: int, max_breakable: int) -> Ingredient:
+    def _create_recipe(self, random: Random,
+                       max_consumable: int, max_enemy: int, max_breakable: int,
+                       enemy_pool: list[str], breakable_pool: list[str]) -> Recipe:
+        ingredient1 = self._select_common_ingredient(random, max_enemy, max_breakable, enemy_pool, breakable_pool)
+        ingredient2 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable,
+                                                enemy_pool, breakable_pool)
+        while ingredient2.item_name == ingredient1.item_name:
+            ingredient2 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable,
+                                                    enemy_pool, breakable_pool)
+        ingredient3 = Ingredient("", 0)
+        ingredient4 = Ingredient("", 0)
         rand = random.random()
         if rand < 0.5:
-            item = random.choice(list(enemy_material_table.keys()))
+            ingredient3 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable,
+                                                    enemy_pool, breakable_pool)
+            while ingredient3.item_name in [ingredient1.item_name, ingredient2.item_name]:
+                ingredient3 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable,
+                                                        enemy_pool, breakable_pool)
+        if rand < 0.25:
+            ingredient4 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable,
+                                                    enemy_pool, breakable_pool)
+            while ingredient4.item_name in [ingredient1.item_name, ingredient2.item_name, ingredient3.item_name]:
+                ingredient4 = self._select_ingredient(random, max_consumable, max_enemy, max_breakable,
+                                                        enemy_pool, breakable_pool)
+        ingredients = sorted([ingredient1, ingredient2, ingredient3, ingredient4], key=_sort_ingredients)
+        self._count_materials(*ingredients)
+        access_rule = self._get_ingredients_rule(*ingredients)
+        return Recipe(*ingredients, access_rule=access_rule)
+
+    def _select_common_ingredient(self, random: Random, max_enemy: int, max_breakable: int,
+                           enemy_pool: list[str], breakable_pool: list[str]) -> Ingredient:
+        rand = random.random()
+        if rand < 0.5:
+            item = random.choice(enemy_pool)
             count = self._random_amount(random, 1, max_enemy)
             return Ingredient(item, count)
-        item = random.choice(list(breakable_material_table.keys()))
+        item = random.choice(breakable_pool)
         count = self._random_amount(random, 1, max_breakable, 5)
         return Ingredient(item, count)
 
-    def _select_ingredient(self, random: Random, max_consumable: int, max_enemy: int, max_breakable: int) -> Ingredient:
+    def _select_ingredient(self, random: Random,
+                           max_consumable: int, max_enemy: int, max_breakable: int,
+                           enemy_pool: list[str], breakable_pool: list[str]) -> Ingredient:
         rand = random.random()
         if rand < 0.05:
             item = random.choice(list(rare_material_table.keys()))
@@ -234,7 +268,7 @@ class RecipeList:
             item = random.choice(consumable_ingredients)
             count = self._random_amount(random, 1, max_consumable)
             return Ingredient(item, count)
-        return self._select_breakable_ingredient(random, max_enemy, max_breakable)
+        return self._select_common_ingredient(random, max_enemy, max_breakable, enemy_pool, breakable_pool)
 
     def _random_amount(self, random: Random, min: int, max: int, p: int = 2) -> int:
         return round(min + (max - min) * pow(random.random(), p))
@@ -266,9 +300,12 @@ class RecipeList:
             return Has(ingredient.item_name, ingredient.amount) | CanReachRegion(LocationNames.infernal_altar_region)
         if ingredient.item_name in accessories_table:
             return (Has(ingredient.item_name, ingredient.amount,
-                        options=[OptionFilter(Recipesanity, Toggle.option_false)], filtered_resolution=True) &
-                        Macro(True_(), options=[OptionFilter(Recipesanity, Toggle.option_true)],
-                              filtered_resolution=True, name="Ingredient '{ingredient.item_name}'"))
+                        options=[
+                            OptionFilter(RecipeRandomizationType, RecipeRandomizationType.option_none, operator="gt")
+                        ], filtered_resolution=True) &
+                        Macro(True_(), options=[
+                            OptionFilter(RecipeRandomizationType, RecipeRandomizationType.option_none)
+                            ], filtered_resolution=True, name="Ingredient '{ingredient.item_name}'"))
         if ingredient.item_name in ingredient_rules:
             return ingredient_rules[ingredient.item_name]
         return True_()
