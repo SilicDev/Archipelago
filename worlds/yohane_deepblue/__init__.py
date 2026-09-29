@@ -122,14 +122,14 @@ class YohaneDeepblueWorld(World):
             self.options.early_chika_blocks_moved.value = slot_data["early_chika_blocks_moved"]
             self.options.enable_you_skips.value = slot_data["enable_you_skips"]
             self.options.craftsanity.value = slot_data["craftsanity"]
-            #if "recipesanity" in slot_data.keys():
-                #self.options.recipesanity.value = slot_data["recipesanity"]
-                #if self.options.recipesanity.value == Toggle.option_true:
-                    #self.options.recipe_randomization_type.value = RecipeRandomizationType.option_full
-                #else:
-                    #self.options.recipe_randomization_type.value = RecipeRandomizationType.option_none
-            #else:
-                #self.options.recipe_randomization_type.value = slot_data["recipe_randomization_type"]
+            if "recipesanity" in slot_data.keys():
+                self.options.recipesanity.value = slot_data["recipesanity"]
+                if self.options.recipesanity.value == Toggle.option_true:
+                    self.options.recipe_randomization_type.value = RecipeRandomizationType.option_full
+                else:
+                    self.options.recipe_randomization_type.value = RecipeRandomizationType.option_none
+            else:
+                self.options.recipe_randomization_type.value = slot_data["recipe_randomization_type"]
             self.options.progressive_character_unlocks = slot_data["progressive_character_unlocks"]
             # don't reject slot_data from before 0.2.4 -> make breaking change in 0.3.0
             self.options.logic_difficulty.value = slot_data.get("logic_difficulty", self.options.logic_difficulty.default)

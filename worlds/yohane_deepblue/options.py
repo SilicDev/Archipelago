@@ -9,33 +9,29 @@ from Options import (
     DeathLinkMixin,
     DefaultOnToggle,
     FreeText,
-    Option,
     OptionError,
     OptionGroup,
     OptionSet,
     PerGameCommonOptions,
     Range,
+    Removed,
     StartInventoryPool,
     Toggle,
-    Visibility,
 )
-from worlds.AutoWorld import World
 
 
-class Removed(Option[typing.Any]):
+class Deprecated(Removed):
     """
     This Option has been Removed.
     Throws an option error if set to anything but None
     """
-    default = None
     replacement: str = ""
-    visibility = Visibility.none
 
     def __init__(self, value: typing.Any):
         if value:
             if self.replacement:
                 raise OptionError(f"Option '{self.__class__.__name__}' is deprecated, use '{self.replacement}' instead.")
-            raise OptionError(f"Option '{self.__class__.__name__}' was removed, please update your options file.")
+        super().__init__(value)
 
 
 
@@ -125,7 +121,7 @@ class RecipeRandomizationType(Choice):
     default = option_none
 
 
-class Recipesanity(Removed):
+class Recipesanity(Deprecated):
     """
     If `true` randomizes crafting recipes.
 
@@ -240,7 +236,7 @@ class YohaneDeepblueOptions(PerGameCommonOptions, DeathLinkGroupMixin, DamageLin
     drop_rate_increase: DropRateIncrease
     craftsanity: Craftsanity
 
-    #recipesanity: Recipesanity
+    recipesanity: Recipesanity
     recipe_randomization_type: RecipeRandomizationType
     max_consumable_ingredient_count: MaxConsumableIngredientCount
     max_enemy_ingredient_count: MaxEnemyIngredientCount
