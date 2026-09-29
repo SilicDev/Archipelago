@@ -686,7 +686,10 @@ class YohaneDeepblueContext(CommonContext):
             self.death_link_group = self.slot_data.get("death_link_group", "")
             self.damagelink_enabled = self.slot_data.get("damage_link", False)
             self.damage_link_group = self.slot_data.get("damage_link_group", "")
-            self.recipesanity = self.slot_data.get("recipesanity", False)
+            if "recipesanity" in self.slot_data.keys():
+                self.recipesanity = self.slot_data.get("recipesanity", False)
+            else:
+                self.recipesanity = self.slot_data.get("recipe_randomization_type", 0) != 0
             self.craftsanity = self.slot_data.get("craftsanity", False)
             self.recipes = bytes.fromhex(self.slot_data.get("recipes", ""))
             location_scouts = []
