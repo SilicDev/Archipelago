@@ -460,6 +460,7 @@ lookup_id_to_name: dict[int, str] = {idx: name for name, idx in location_table.i
 
 location_groups: dict[str, set[str]] = {
     "Level Clear": set(level_clear_table.keys()),
+    "Red Star Rings": set(red_rings_table.keys()),
     "Red Rings": set(red_rings_table.keys()),
     "Special Stage": set(special_stage_table.keys()),
     "Tutorial": set(tutorial_clear_table.keys()),
@@ -471,4 +472,18 @@ location_groups: dict[str, set[str]] = {
     "Aquarium Park": aquarium_park_region_locations,
     "Asteroid Coaster": asteroid_coaster_region_locations,
     "Terminal Velocity": terminal_velocity_region_locations,
+
+    # Aliases
+    "Tropical Resort Boss": {LocationNames.tropical_resort_boss},
+    "Globotron": {LocationNames.tropical_resort_boss},
+    "Sweet Mountain Boss": {LocationNames.sweet_mountain_boss},
+    "Captain Jelly": {LocationNames.sweet_mountain_boss},
+    "Starlight Carnival Boss": {LocationNames.starlight_carnival_boss},
+    "Frigate Orcan": {LocationNames.starlight_carnival_boss},
+    "Planet Wisp Boss": {LocationNames.planet_wisp_boss},
+    "Drillinator": {LocationNames.planet_wisp_boss},
+    "Aquarium Park Boss": {LocationNames.aquarium_park_boss},
+    "Admiral Jelly": {LocationNames.aquarium_park_boss},
+    "Asteroid Coaster Boss": {LocationNames.asteroid_coaster_boss},
+    "Frigate Skullian": {LocationNames.asteroid_coaster_boss},
 }

@@ -86,5 +86,33 @@ item_groups: dict[str, set[str]] = {
     "Chaos Emeralds": set(emeralds_table.keys()),
     "Wisps": set(wisps_table.keys()),
     "Wisp Unlocks": set(wisp_unlocks_table.keys()),
+    "Wisp Translators": set(wisp_unlocks_table.keys()),
+    "Colour Powers": set(wisp_unlocks_table.keys()),
     "Planet Access": set(planet_access_table.keys()),
+    "Shuttles": set(planet_access_table.keys()),
+
+    # Aliases
+    "White Boost": {ItemNames.white_wisp_unlock},
+    "Red Burst": {ItemNames.red_wisp_unlock},
+    "Orange Rocket": {ItemNames.orange_wisp_unlock},
+    "Yellow Drill": {ItemNames.yellow_wisp_unlock},
+    "Cyan Laser": {ItemNames.cyan_wisp_unlock},
+    "Violet Void": {ItemNames.violet_wisp_unlock},
+
+    "White Wisp Translator": {ItemNames.white_wisp_unlock},
+    "Red Wisp Translator": {ItemNames.red_wisp_unlock},
+    "Orange Wisp Translator": {ItemNames.orange_wisp_unlock},
+    "Yellow Wisp Translator": {ItemNames.yellow_wisp_unlock},
+    "Cyan Wisp Translator": {ItemNames.cyan_wisp_unlock},
+    "Violet Wisp Translator": {ItemNames.violet_wisp_unlock},
+
+    "Tropical Resort": {ItemNames.tropical_resort_unlock},
+    "Sweet Mountain": {ItemNames.sweet_mountain_unlock},
+    "Starlight Carnival": {ItemNames.starlight_carnival_unlock},
+    "Planet Wisp": {ItemNames.planet_wisp_unlock},
+    "Aquarium Park": {ItemNames.aquarium_park_unlock},
+    "Asteroid Coaster": {ItemNames.asteroid_coaster_unlock},
+    "Terminal Velocity": {ItemNames.terminal_velocity_unlock},
+
+    "Terminal Velocity Access": {ItemNames.terminal_velocity_unlock},
 }
