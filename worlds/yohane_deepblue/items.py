@@ -445,4 +445,5 @@ item_groups: dict[str, set[str]] = {
     "Weapons": set(weapons_table.keys()),
     "Currency": yen_set,
     "Yen": yen_set,
+    "Bad Fallen Angel's Cloak": {ItemNames.fallen_angels_cloak_bad},
 }
