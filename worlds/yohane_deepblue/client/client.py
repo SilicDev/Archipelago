@@ -273,6 +273,11 @@ class YohaneDeepblueContext(CommonContext):
                             continue
 
                     if not self.game_patched:
+                        mod_dll = pymem.process.module_from_name(self.game_process.process_handle, "YohaneAPMod.dll")
+                        if mod_dll is not None:
+                            self.valid_slot = False
+                            logger.warning("Detected YohaneAPMod.dll! Please do not run both clients at once. Disabling python client.")
+                            continue
                         self.patch_game()
 
                     is_dead = self.game_process.read_uchar(flags_struct + addresses.OFFSET_IS_DEAD)
