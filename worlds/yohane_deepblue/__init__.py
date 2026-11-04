@@ -177,7 +177,7 @@ class YohaneDeepblueWorld(World):
         else:
             self.push_precollected(self.create_item(ItemNames.katar))
         self.push_precollected(self.create_item(ItemNames.lailaps_unlock))
-        if self.options.infernal_altar_access == InfernalAltarAccess.option_bosses:
+        if self.options.infernal_altar_access.value == InfernalAltarAccess.option_bosses:
             self.get_location(LocationNames.sunken_temple_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
             self.get_location(LocationNames.ruins_boss_defeated_3).place_locked_item(self.create_item(ItemNames.boss_token))
             self.get_location(LocationNames.grotto_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
@@ -248,7 +248,6 @@ class YohaneDeepblueWorld(World):
 
     def set_rules(self) -> None:
         set_rules(self)
-        self.multiworld.completion_condition[self.player] = lambda state: state.has(ItemNames.victory, self.player)
 
     def get_filler_item_name(self) -> str:
         junk_items = sorted(junk_table)
