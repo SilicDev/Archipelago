@@ -134,7 +134,7 @@ class YohaneDeepblueWorld(World):
             # don't reject slot_data from before 0.2.4 -> make breaking change in 0.3.0
             self.options.logic_difficulty.value = slot_data.get("logic_difficulty", self.options.logic_difficulty.default)
             # don't reject slot_data from before 0.2.5 -> make breaking change in 0.3.0
-            self.options.infernal_altar_access.value = slot_data.get("infernal_altar_access", self.options.logic_difficulty.default)
+            self.options.infernal_altar_access.value = slot_data.get("infernal_altar_access", self.options.infernal_altar_access.default)
 
         else:
             # recipes
