@@ -3,7 +3,7 @@ from enum import IntEnum
 
 from BaseClasses import CollectionState, Entrance, EntranceType, ItemClassification, Region
 from Options import Toggle
-from rule_builder.rules import CanReachLocation, CanReachRegion, Filtered, Has, Rule
+from rule_builder.rules import CanReachLocation, CanReachRegion, Filtered, Has, HasAll, Rule
 from worlds.AutoWorld import World
 
 from .data import DataMaps, ItemNames, LocationNames
@@ -233,7 +233,17 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.sunken_temple_main_region, LocationNames.sunken_temple_post_boss_region,
             Filtered(chika_block_rule, options=chika_blocks_filter, filtered_resolution=True), True)
 
-    connect(world, LocationNames.sunken_temple_main_region, LocationNames.infernal_altar_region, boss_token_rule)
+    connect(world, LocationNames.sunken_temple_main_region, LocationNames.infernal_altar_region,
+            (boss_token_rule & boss_goal_filter) |
+            HasAll(ItemNames.lailaps_unlock,
+                   ItemNames.chika_unlock,
+                   ItemNames.riko_unlock,
+                   ItemNames.kanan_unlock,
+                   ItemNames.dia_unlock,
+                   ItemNames.you_unlock,
+                   ItemNames.hanamaru_unlock,
+                   ItemNames.mari_unlock,
+                   ItemNames.ruby_unlock, options=non_boss_goal_filter))
 
     connect(world, LocationNames.sunken_temple_post_boss_region, LocationNames.grotto_main_region, None)
 

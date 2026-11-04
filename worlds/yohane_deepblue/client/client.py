@@ -323,10 +323,10 @@ class YohaneDeepblueContext(CommonContext):
                             game_progression_flags |= DataMaps.character_rescue_flag_map[location]
                         elif game_progression_flags & DataMaps.character_rescue_flag_map[location] != 0:
                             self.queued_locations.append(location_table[location])
+
                     game_progression_flags &= 0x7FFF
-                    if (map_area == 1 and map_room in [9, 10] and ItemNames.boss_token in self.local_received_items and
-                            self.local_received_items[ItemNames.boss_token] >= 8):
-                        game_progression_flags |= 0x8000 # Spawns Infernal Altar cutscene
+                    if (map_area == 1 and map_room in [9, 10]):
+                        game_progression_flags = await self.handle_infernal_altar(self.game_process, save_game, game_progression_flags)
                     self.game_process.write_ushort(save_game + addresses.GAME_PROGRESSION_FLAGS_OFFSET, game_progression_flags)
 
                     boss_defeated_flags = int(self.game_process.read_uint(save_game + addresses.BOSS_DEFEATED_FLAGS))
@@ -405,6 +405,14 @@ class YohaneDeepblueContext(CommonContext):
 
             await asyncio.sleep(0.1)
 
+    async def handle_infernal_altar(self, game: pymem.Pymem, save_game: int, game_progression_flags: int) -> int:
+        character_unlock_flags = int(game.read_uint(save_game + addresses.CHARACTER_UNLOCK_FLAGS_OFFSET))
+        infernal_altar_access = self.slot_data.get("infernal_altar_access", 0)
+        if ((infernal_altar_access == 0 and (ItemNames.boss_token in self.local_received_items and
+                                             self.local_received_items[ItemNames.boss_token] >= 8))
+            or (infernal_altar_access == 1 and (character_unlock_flags & 0x002AAAA0) == 0x002AAAA0)):
+            game_progression_flags |= 0x8000 # Spawns Infernal Altar cutscene
+        return game_progression_flags
 
     async def handle_characters(self, game: pymem.Pymem, save_game: int):
         character_quest_flags = int(game.read_uint(save_game + addresses.CHARACTER_QUEST_FLAGS_OFFSET))

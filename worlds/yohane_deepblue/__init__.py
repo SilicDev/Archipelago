@@ -31,7 +31,7 @@ from .items import (
     weapons_table,
 )
 from .locations import YohaneDeepblueLocation, location_groups, location_table, setup_locations
-from .options import RecipeRandomizationType, YohaneDeepblueOptions, yohane_deepblue_option_groups
+from .options import InfernalAltarAccess, RecipeRandomizationType, YohaneDeepblueOptions, yohane_deepblue_option_groups
 from .recipe import RecipeList, ingredient_rules
 from .regions import connect_regions, create_regions
 from .rules import macros, region_group_rules, set_rules
@@ -133,6 +133,8 @@ class YohaneDeepblueWorld(World):
             self.options.progressive_character_unlocks = slot_data["progressive_character_unlocks"]
             # don't reject slot_data from before 0.2.4 -> make breaking change in 0.3.0
             self.options.logic_difficulty.value = slot_data.get("logic_difficulty", self.options.logic_difficulty.default)
+            # don't reject slot_data from before 0.2.5 -> make breaking change in 0.3.0
+            self.options.infernal_altar_access.value = slot_data.get("infernal_altar_access", self.options.logic_difficulty.default)
 
         else:
             # recipes
@@ -175,14 +177,15 @@ class YohaneDeepblueWorld(World):
         else:
             self.push_precollected(self.create_item(ItemNames.katar))
         self.push_precollected(self.create_item(ItemNames.lailaps_unlock))
-        self.get_location(LocationNames.sunken_temple_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.get_location(LocationNames.ruins_boss_defeated_3).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.get_location(LocationNames.grotto_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.get_location(LocationNames.coral_hill_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.get_location(LocationNames.sea_of_trees_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.get_location(LocationNames.crystalline_grotto_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.get_location(LocationNames.sunken_volcano_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
-        self.get_location(LocationNames.shipwreck_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+        if self.options.infernal_altar_access == InfernalAltarAccess.option_bosses:
+            self.get_location(LocationNames.sunken_temple_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+            self.get_location(LocationNames.ruins_boss_defeated_3).place_locked_item(self.create_item(ItemNames.boss_token))
+            self.get_location(LocationNames.grotto_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+            self.get_location(LocationNames.coral_hill_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+            self.get_location(LocationNames.sea_of_trees_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+            self.get_location(LocationNames.crystalline_grotto_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+            self.get_location(LocationNames.sunken_volcano_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
+            self.get_location(LocationNames.shipwreck_boss_defeated).place_locked_item(self.create_item(ItemNames.boss_token))
         self.get_location(LocationNames.aquors_memoria_boss_defeated).place_locked_item(self.create_item(ItemNames.victory))
 
         num_locations_to_fill = len(self.multiworld.get_unfilled_locations(self.player))
@@ -265,6 +268,7 @@ class YohaneDeepblueWorld(World):
             "recipe_randomization_type",
             "craftsanity",
             "logic_difficulty",
+            "infernal_altar_access",
         )
         upgrades = []
         if self.options.progressive_character_unlocks == Toggle.option_true:

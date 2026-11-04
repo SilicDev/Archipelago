@@ -34,6 +34,17 @@ class Deprecated(Removed):
         super().__init__(value)
 
 
+class InfernalAltarAccess(Choice):
+    """
+    Sets the condition for opening Infernal Altar
+
+    Bosses: defeat all 8 bosses to open Infernal Altar
+    Allies: Find all allies in the multiworld to open Infernal Altar
+    """
+    display_name = "Infernal Altar Access"
+    option_bosses = 0
+    option_allies = 1
+    default = option_bosses
 
 class LogicDifficulty(Choice):
     """
@@ -230,6 +241,7 @@ class DamageLinkGroupMixin(DamageLinkMixin):
 class YohaneDeepblueOptions(PerGameCommonOptions, DeathLinkGroupMixin, DamageLinkGroupMixin):
     start_inventory_from_pool: StartInventoryPool
 
+    infernal_altar_access: InfernalAltarAccess
     progressive_character_unlocks: ProgressiveCharacterUnlocks
     upgrade_hints: UpgradeHints
     random_starting_weapon: RandomStartingWeapon

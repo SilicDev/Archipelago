@@ -25,11 +25,13 @@ from worlds.AutoWorld import World
 from .data import ItemNames, LocationNames
 from .data.constants import GAME_NAME
 from .locations import crafting_locations, location_table, region_groups
-from .options import EarlyChikaBlockMoved, EnableYouSkips, LogicDifficulty
+from .options import EarlyChikaBlockMoved, EnableYouSkips, InfernalAltarAccess, LogicDifficulty
 
 you_enabled_filter = [OptionFilter(EnableYouSkips, EnableYouSkips.option_true)]
 chika_blocks_filter = [OptionFilter(EarlyChikaBlockMoved, EarlyChikaBlockMoved.option_false)]
 easy_mode_filter = [OptionFilter(LogicDifficulty, LogicDifficulty.option_easy)]
+boss_goal_filter = [OptionFilter(InfernalAltarAccess, InfernalAltarAccess.option_bosses)]
+non_boss_goal_filter = [OptionFilter(InfernalAltarAccess, InfernalAltarAccess.option_bosses, "ne")]
 
 soarshoes_rule = Has(ItemNames.fallen_angels_soarshoes)
 gloves_rule = Has(ItemNames.gloves_of_might)
