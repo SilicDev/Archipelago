@@ -91,7 +91,6 @@ class Ingredient(typing.NamedTuple):
             return cls(lookup_id_to_name[id], amount)
         return cls("", 0)
 
-
 @dataclass
 class Recipe:
     ingredient1: Ingredient
@@ -161,6 +160,7 @@ class RecipeList:
         for _ in range(93):
             self.recipes.append(self._create_recipe(random, max_consumable, max_enemy, max_breakable,
                                                     enemy_pool, breakable_pool))
+        self.build_rules()
         pass
 
     def generate_by_areas(self, random: Random,
@@ -178,6 +178,7 @@ class RecipeList:
                                                             enemy_pool, breakable_pool))
             if not locked:
                 previous_pool |= new_pool
+        self.build_rules()
         pass
 
     def generate_default(self) -> None:
@@ -196,9 +197,10 @@ class RecipeList:
                 if len(vanilla_recipe) > 3:
                     ingredient4 = vanilla_recipe[3]
                 self._count_materials(ingredient1, ingredient2, ingredient3, ingredient4)
-                access_rule = self._get_ingredients_rule(ingredient1, ingredient2, ingredient3, ingredient4)
-                self.recipes.append(Recipe(ingredient1, ingredient2, ingredient3, ingredient4, access_rule))
+                #access_rule = self._get_ingredients_rule(ingredient1, ingredient2, ingredient3, ingredient4)
+                self.recipes.append(Recipe(ingredient1, ingredient2, ingredient3, ingredient4, None))
             pass
+        self.build_rules()
         pass
 
     def get_bytes(self) -> bytes:
@@ -210,11 +212,22 @@ class RecipeList:
     def from_bytes(self, data: bytearray):
         for _ in range(93):
             recipe = Recipe.unpack(data)
-            access_rule = self._get_ingredients_rule(*recipe.get_ingredients())
-            recipe.access_rule = access_rule
             self.recipes.append(recipe)
             data = data[8:]
+        self.count_ingredients()
+        self.build_rules()
         pass
+
+    def count_ingredients(self):
+        self.rare_materials.clear()
+        self.accessories.clear()
+        for recipe in self.recipes:
+            self._count_materials(recipe.ingredient1, recipe.ingredient2, recipe.ingredient3, recipe.ingredient4)
+
+    def build_rules(self):
+        for recipe in self.recipes:
+            recipe.access_rule = self._get_ingredients_rule(recipe.ingredient1, recipe.ingredient2,
+                                                            recipe.ingredient3, recipe.ingredient4)
 
     def _create_recipe(self, random: Random,
                        max_consumable: int, max_enemy: int, max_breakable: int,
@@ -242,8 +255,8 @@ class RecipeList:
                                                         enemy_pool, breakable_pool)
         ingredients = sorted([ingredient1, ingredient2, ingredient3, ingredient4], key=_sort_ingredients)
         self._count_materials(*ingredients)
-        access_rule = self._get_ingredients_rule(*ingredients)
-        return Recipe(*ingredients, access_rule=access_rule)
+        #access_rule = self._get_ingredients_rule(*ingredients)
+        return Recipe(*ingredients, access_rule=None)
 
     def _select_common_ingredient(self, random: Random, max_enemy: int, max_breakable: int,
                            enemy_pool: list[str], breakable_pool: list[str]) -> Ingredient:
@@ -297,7 +310,7 @@ class RecipeList:
 
         # can't macro these
         if ingredient.item_name in rare_material_table:
-            return Has(ingredient.item_name, ingredient.amount) | CanReachRegion(LocationNames.infernal_altar_region)
+            return Has(ingredient.item_name, self.rare_materials[ingredient.item_name]) | CanReachRegion(LocationNames.infernal_altar_region)
         if ingredient.item_name in accessories_table:
             return (Has(ingredient.item_name, ingredient.amount,
                         options=[

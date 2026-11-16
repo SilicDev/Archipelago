@@ -30,7 +30,7 @@ from .items import (
     unique_accessories_table,
     weapons_table,
 )
-from .locations import YohaneDeepblueLocation, location_groups, location_table, setup_locations
+from .locations import YohaneDeepblueLocation, crafting_locations, location_groups, location_table, setup_locations
 from .options import InfernalAltarAccess, RecipeRandomizationType, YohaneDeepblueOptions, yohane_deepblue_option_groups
 from .recipe import RecipeList, ingredient_rules
 from .regions import connect_regions, create_regions
@@ -247,6 +247,12 @@ class YohaneDeepblueWorld(World):
         return YohaneDeepblueItem(name, classification, data.code, self.player)
 
     def set_rules(self) -> None:
+        if self.options.craftsanity.value == Toggle.option_true:
+            for location in crafting_locations:
+                location_id = location_table[location]
+                rule = self.recipe_list.recipes[location_id - 701].access_rule
+                if rule is not None:
+                    self.set_rule(self.get_location(location), rule)
         set_rules(self)
 
     def get_filler_item_name(self) -> str:

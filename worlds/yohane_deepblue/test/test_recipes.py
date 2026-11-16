@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from test.param import classvar_matrix
 
-from ..data import ItemNames, DataMaps
+from ..data import DataMaps, ItemNames
 from ..items import (
     breakable_material_table,
     consumables_table,
