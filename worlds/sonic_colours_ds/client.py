@@ -434,7 +434,7 @@ class SonicColoursDSClient(BizHawkClient):
         if read_result is not None:
             game_num_items_received = int.from_bytes(read_result[0], "little") >> 4
 
-        if len(ctx.items_received) > self.num_items_received:
+        while len(ctx.items_received) > self.num_items_received:
             item = ctx.items_received[self.num_items_received]
             item_name = ctx.item_names.lookup_in_game(item.item)
             if item_name in wisp_unlocks_table.keys():
@@ -446,12 +446,12 @@ class SonicColoursDSClient(BizHawkClient):
                 self.local_available_planets |= 1 << DataMaps.access_item_to_offset[item_name]
             else:
                 self.local_junk_items.append(item_name)
-            if game_num_items_received < self.num_items_received:
-                await bizhawk.write(
-                    ctx.bizhawk_ctx,
-                    [(SCDS_ITEMS_RECEIVED, (self.num_items_received << 4).to_bytes(4, "little"), "Main RAM")]
-                )
             self.num_items_received += 1
+        if game_num_items_received < self.num_items_received:
+            await bizhawk.write(
+                ctx.bizhawk_ctx,
+                [(SCDS_ITEMS_RECEIVED, (self.num_items_received << 4).to_bytes(4, "little"), "Main RAM")]
+            )
 
 
     async def handle_junk_items(self, ctx: "BizHawkClientContext", guards: dict[str, tuple[int, bytes, str]]) -> None:
