@@ -87,9 +87,9 @@ crystalline_grotto_boss_defeated = "Crystalline Grotto Boss"
 sunken_volcano_boss_defeated = "Sunken Volcano Boss"
 shipwreck_boss_defeated = "Shipwreck Boss"
 infernal_altar_boss_defeated = "Infernal Altar Boss"
-aquors_memoria_boss_defeated = "Aquors Memoria Boss"
+aquors_memoria_boss_defeated = "Aqours Memoria Boss"
 
-# Aquors Memoria refights
+# Aqours Memoria refights
 sunken_temple_boss_refight = "Sunken Temple Boss (Refight)"
 ruins_boss_refight = "Ruins Boss Fight (Refight)"
 grotto_boss_refight = "Grotto Boss (Refight)"
@@ -197,7 +197,7 @@ shipwreck_boss_region = "Shipwreck - Boss Area"
 shipwreck_right_entrance_region = "Shipwreck - Right Entrance"
 
 infernal_altar_region = "Infernal Altar"
-aqours_memoria_region = "Aquors Memoria"
+aqours_memoria_region = "Aqours Memoria"
 
 recipe_01 = "Crafting Recipe 01"
 recipe_02 = "Crafting Recipe 02"
