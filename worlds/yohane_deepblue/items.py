@@ -207,7 +207,7 @@ weapons_table: dict[str, ItemData] = {
     ItemNames.burstbow: ItemData(602, False),
     ItemNames.mistilteinn: ItemData(603, True),
     ItemNames.tribow: ItemData(604, False),
-    ItemNames.tres_perfora: ItemData(605, False),
+    ItemNames.tres_perfora: ItemData(605, True),
     ItemNames.autobow: ItemData(606, False),
     ItemNames.ballista: ItemData(607, False),
     ItemNames.dagger: ItemData(608, False),

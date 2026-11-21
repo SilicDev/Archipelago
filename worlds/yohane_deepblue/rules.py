@@ -59,7 +59,8 @@ upgraded_ruby_rule = Has(ItemNames.ruby_upgrade) & ruby_rule
 
 chika_block_rule = chika_rule | upgraded_ruby_rule
 ignore_projectile_rule = Filtered((ruby_rule | upgraded_you_rule | mari_rule | upgraded_riko_rule |
-                                   HasAny(ItemNames.mistilteinn, ItemNames.carnwennan, ItemNames.spread_toss)),
+                                   HasAny(ItemNames.mistilteinn, ItemNames.carnwennan, ItemNames.tres_perfora,
+                                          ItemNames.spread_toss)),
                                    options=easy_mode_filter, filtered_resolution=True)
 you_skip_rule = Filtered(you_rule, options=you_enabled_filter, filtered_resolution=False)
 damage_boost_rule = Filtered(False_(), options=easy_mode_filter, filtered_resolution=True)
