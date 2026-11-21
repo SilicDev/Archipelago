@@ -446,7 +446,7 @@ def connect_regions(world: World) -> None:
     connect(world, LocationNames.sea_of_trees_center_save_region, LocationNames.sea_of_trees_center_chika_region, upgraded_kanan_rule, True)
     connect(world, LocationNames.sea_of_trees_center_chika_region, LocationNames.sea_of_trees_center_save_region, kanan_rule, True)
 
-    connect(world, LocationNames.sea_of_trees_center_chika_region, LocationNames.sea_of_trees_random_region, kanan_rule | chika_rule, True)
+    connect(world, LocationNames.sea_of_trees_center_chika_region, LocationNames.sea_of_trees_random_region, kanan_rule | chika_rule | upgraded_mari_rule, True)
 
     connect(world, LocationNames.sea_of_trees_random_region, LocationNames.sea_of_trees_right_region, soarshoes_rule | gloves_rule, True)
 
