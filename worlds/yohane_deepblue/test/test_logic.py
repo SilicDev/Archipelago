@@ -221,7 +221,7 @@ class TestChikaBlocksNotMoved(YohaneDeepblueTestBase):
         self.world.get_location(LocationNames.hanamaru_rescue).place_locked_item(self.world.create_item(ItemNames.hanamaru_unlock))
         self.world.get_location(LocationNames.mari_rescue).place_locked_item(self.world.create_item(ItemNames.mari_unlock))
         self.world.get_location(LocationNames.ruby_rescue).place_locked_item(self.world.create_item(ItemNames.ruby_unlock))
-        self.assertEqual(self.multiworld.can_beat_game(), True)
+        self.assertBeatable(True)
         pass
 
 
