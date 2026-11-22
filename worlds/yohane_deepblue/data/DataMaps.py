@@ -43,7 +43,7 @@ chest_data_map = {
     LocationNames.spikey_ball_fish_room_chest: ChestData(0x308, 0x10, ItemNames.extra_accessory_slot),
     LocationNames.final_guard_room_chest: ChestData(0x308, 0x01, ItemNames.torn_collar),
     LocationNames.gloves_of_might_room_chest: ChestData(0x2BB, 0x80, ItemNames.gloves_of_might),
-    LocationNames.postal_guild_bag_room: ChestData(0x2BB, 0x40, ItemNames.you_upgrade),
+    LocationNames.postal_guild_bag_room_chest: ChestData(0x2BB, 0x40, ItemNames.you_upgrade),
 
     LocationNames.soarshoesnt_chest_room_chest: ChestData(0x2AB, 0x80, ItemNames.magicolight),
     LocationNames.annoying_teleporting_fish_room_chest: ChestData(0x2F8, 0x10, ItemNames.lady_of_the_lakes_bromide),
@@ -90,7 +90,7 @@ character_quest_flag_map = {
     LocationNames.tonosamas_parts_room_chest: 0x2000,
     LocationNames.laptop_room_chest: 0x010000,
     LocationNames.looong_slide_room_chest: 0x080000,
-    LocationNames.postal_guild_bag_room: 0x400000,
+    LocationNames.postal_guild_bag_room_chest: 0x400000,
     LocationNames.scarlet_delta_suit_room_chest: 0x02000000,
     LocationNames.lost_monstie_room_chest: 0x10000000,
 }
@@ -213,7 +213,7 @@ character_upgrade_to_area_room = {
     ItemNames.riko_upgrade: (3, [28, 25, 27], LocationNames.spellbook_room_chest),
     ItemNames.kanan_upgrade: (7, [55, 54, 56], LocationNames.tonosamas_parts_room_chest),
     ItemNames.dia_upgrade: (5, [23, 22], LocationNames.scarlet_delta_suit_room_chest),
-    ItemNames.you_upgrade: (8, [17, 16, 18], LocationNames.postal_guild_bag_room),
+    ItemNames.you_upgrade: (8, [17, 16, 18], LocationNames.postal_guild_bag_room_chest),
     ItemNames.mari_upgrade: (4, [9, 8, 10], LocationNames.lost_monstie_room_chest),
     ItemNames.hanamaru_upgrade: (2, [19, 24], LocationNames.laptop_room_chest),
     ItemNames.ruby_upgrade: (6, [41, 40, 42], LocationNames.looong_slide_room_chest),

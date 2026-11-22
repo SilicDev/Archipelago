@@ -31,7 +31,7 @@ really_sealed_off_chest_room_chest = "Shipwreck - Really Sealed Off Chest Room -
 spikey_ball_fish_room_chest = "Shipwreck - Spikey Ball Fish Room - Chest" # room 6
 final_guard_room_chest = "Shipwreck - Final Guard Room - Chest" # room 24
 gloves_of_might_room_chest = "Shipwreck - Gloves of Might Room - Chest" # room 30
-postal_guild_bag_room = "Shipwreck - Postal Guild Bag Room - Chest" # room 17
+postal_guild_bag_room_chest = "Shipwreck - Postal Guild Bag Room - Chest" # room 17
 
 soarshoesnt_chest_room_chest = "Coral Hill - Soarshoesn't Chest Room - Chest" # room 16
 annoying_teleporting_fish_room_chest = "Coral Hill - Annoying Teleporting Fish Room - Chest" # room 30

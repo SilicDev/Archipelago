@@ -92,7 +92,7 @@ chest_locations = {
     LocationNames.spikey_ball_fish_room_chest: 105,
     LocationNames.final_guard_room_chest: 106,
     LocationNames.gloves_of_might_room_chest: 107,
-    LocationNames.postal_guild_bag_room: 108,
+    LocationNames.postal_guild_bag_room_chest: 108,
 
     LocationNames.soarshoesnt_chest_room_chest: 109,
     LocationNames.annoying_teleporting_fish_room_chest: 110,
@@ -495,7 +495,7 @@ shipwreck_sealed_off_chest_region_locations = {
 }
 
 shipwreck_postal_guild_bag_region_locations = {
-    LocationNames.postal_guild_bag_room,
+    LocationNames.postal_guild_bag_room_chest,
 }
 
 shipwreck_post_postal_guild_bag_region_locations = set()
