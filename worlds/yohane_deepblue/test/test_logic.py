@@ -61,7 +61,23 @@ class TestAccessibilityDefault(YohaneDeepblueTestBase):
 
     def test_accessibility_sunken_volcano(self) -> None:
         self.assertAccessDependency([LocationNames.hotspring_room_chest],
-                                    [[ItemNames.kanan_unlock]], True)
+                                    [[ItemNames.kanan_unlock],
+                                     [
+                                         ItemNames.mari_unlock,
+                                         ItemNames.mari_upgrade,
+                                         ItemNames.tres_perfora,
+                                         ItemNames.riko_unlock,
+                                         ItemNames.you_unlock,
+                                         ItemNames.fallen_angels_soarshoes,
+                                     ],
+                                     [
+                                         ItemNames.mari_unlock,
+                                         ItemNames.mari_upgrade,
+                                         ItemNames.tres_perfora,
+                                         ItemNames.riko_unlock,
+                                         ItemNames.you_unlock,
+                                         ItemNames.gloves_of_might,
+                                     ]], True)
 
 class TestAccessibilityHardLogic(YohaneDeepblueTestBase):
     options = {
