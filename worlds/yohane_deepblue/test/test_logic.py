@@ -1,6 +1,7 @@
 from BaseClasses import CollectionState
 
-from ..data import ItemNames, LocationNames
+from ..data import DataMaps, ItemNames, LocationNames
+from ..locations import boss_refight_locations
 from ..options import LogicDifficulty
 from .bases import YohaneDeepblueTestBase
 
@@ -186,6 +187,26 @@ class TestChikaBlocksNotMoved(YohaneDeepblueTestBase):
                 self.multiworld.state = CollectionState(self.multiworld)
             except AssertionError as e:
                 raise AssertionError(f"{e}, Item '{i}' not required to beat the game!") from e
+
+    def test_vanilla_placements(self):
+        """
+        Tests if the vanilla game path is possible in logic.
+        This should never break unless we intentionally make the game more restrictive.
+        """
+        for chest in DataMaps.chest_data_map:
+            self.world.get_location(chest).place_locked_item(self.world.create_item(DataMaps.chest_data_map[chest].vanilla_item))
+        for boss in boss_refight_locations:
+            self.world.get_location(boss).place_locked_item(self.world.create_item(ItemNames.boss_token))
+        self.world.get_location(LocationNames.chika_rescue).place_locked_item(self.world.create_item(ItemNames.chika_unlock))
+        self.world.get_location(LocationNames.riko_rescue).place_locked_item(self.world.create_item(ItemNames.riko_unlock))
+        self.world.get_location(LocationNames.kanan_rescue).place_locked_item(self.world.create_item(ItemNames.kanan_unlock))
+        self.world.get_location(LocationNames.dia_rescue).place_locked_item(self.world.create_item(ItemNames.dia_unlock))
+        self.world.get_location(LocationNames.you_rescue).place_locked_item(self.world.create_item(ItemNames.you_unlock))
+        self.world.get_location(LocationNames.hanamaru_rescue).place_locked_item(self.world.create_item(ItemNames.hanamaru_unlock))
+        self.world.get_location(LocationNames.mari_rescue).place_locked_item(self.world.create_item(ItemNames.mari_unlock))
+        self.world.get_location(LocationNames.ruby_rescue).place_locked_item(self.world.create_item(ItemNames.ruby_unlock))
+        self.assertEqual(self.multiworld.can_beat_game(), True)
+        pass
 
 
 class TestCraftSanity(TestAccessibilityDefault):
